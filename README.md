@@ -1,4 +1,4 @@
-## 环境安装
+## Environment Setup
 
 ### windows:
 ```shell
