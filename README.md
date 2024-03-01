@@ -31,3 +31,14 @@ pip install https://data.pyg.org/whl/torch-1.12.0%2Bcu113/torch_sparse-0.6.16%2B
 pip install rdkit
 pip install dgllife
 ```
+
+## Usage
+### training
+```shell
+python train.py
+```
+### inference
+```shell
+python prepare_custom_data.py
+python inference.py
+```
