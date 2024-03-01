@@ -1,5 +1,6 @@
 # Gram Matrix: An Efficient Representation of Molecular Conformation and Learning Objective for Molecular Pre-training
-<img src=["./xxx.png"](https://github.com/xiangwenkai/GRAM/assets/93317912/adefdee4-05a2-4e80-9f5f-00a9bb948345) width = "300" height = "200" align=center />
+
+![gram预训练模型总结](https://github.com/xiangwenkai/GRAM/assets/93317912/e8b3a482-c3ac-4003-8543-8c656087953c)
 
 
 ## Environment Setup
