@@ -1,5 +1,5 @@
 import torch
-from model import Graphormer
+from models import Graphormer
 from dgl import backend
 import torch.nn as nn
 import datetime
@@ -82,10 +82,10 @@ def get_all_metric(y_true, y_pred):
 
 
 metric_name = ['epoch', 'val_r2', 'val_rmse', 'val_mae', 'test_r2', 'test_rmse', 'test_mae', 'loss']
-out = open("E:/DATA/dgl_graphormer/qm9/processed/p2/qm9_graphormer_pretrain.txt", "w")
+out = open("qm9_graphormer_pretrain.txt", "w")
 out.write(",".join(metric_name) + "\n")
 set_random_seed(123)
-all_sdf_paths = "E:/DATA/dgl_graphormer/qm9/processed/p2/all/*"
+all_sdf_paths = "data/qm9/processed/*"
 all_sdfs = glob.glob(all_sdf_paths)
 dataset = InteractionDataset(all_sdfs, load=True, n_jobs=1)
 # 999 888
@@ -115,7 +115,7 @@ model = Graphormer(
     attention_dropout_rate=0.1
 )
 
-PATH = r"E:\MODEL\dgl_graphormer\model\graphormer_qm9_pretrain\slim\checkpoints_66_2024010301.pt"
+PATH = r"models\checkpoints_66_2024010301.pt"
 model.load_state_dict(torch.load(PATH))
 
 model.to(device)
@@ -173,7 +173,7 @@ if __name__ == '__main__':
 
         out.write(",".join(all_metric) + "\n")
         out.flush()
-        torch.save(model.state_dict(), r'E:\MODEL\dgl_graphormer\model\graphormer_qm9_pretrain\slim\checkpoints_{}_{}.pt'.format(epoch, time.strftime("%Y%m%d%H", time.localtime())))
+        torch.save(model.state_dict(), r'models\checkpoints_{}_{}.pt'.format(epoch, time.strftime("%Y%m%d%H", time.localtime())))
         if early_stop:
             break
 
