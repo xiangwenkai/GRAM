@@ -21,8 +21,6 @@ import dgl
 import torch.nn as nn
 
 
-"""这是根据gdb对结构和12个任务数据进行拼接，并且一部到位，这里保存的数据可以直接一部到位训练"""
-
 def xyztodat(pos, edge_index, num_nodes):
     j, i = edge_index  # j->i
 
@@ -69,63 +67,63 @@ def get_coor(G):
     k=np.dot(arr,z)
     return k
 
+if __name__ == "__main__":
+    random.seed(42)
 
-random.seed(42)
+    atom_distance_dict = {}
+    path = "data/qm9/gdb9.sdf"
+    path_12_task = "data/qm9/qm9.csv"
+    pd_reader = pd.read_csv(path_12_task)
 
-atom_distance_dict = {}
-path = "E:/DATA/dgl_graphormer/qm9/gdb9.sdf"
-path_12_task = "E:/DATA/dgl_graphormer/qm9/qm9.csv"
-pd_reader = pd.read_csv(path_12_task)
+    save_dir = "data/qm9/processed/p2"
+    mols_suppl = Chem.SDMolSupplier(path, removeHs=True)
 
-save_dir = "E:/DATA/dgl_graphormer/qm9/processed/p2"
-mols_suppl = Chem.SDMolSupplier(path, removeHs=True)
+    n = len(mols_suppl)
+    for i in tqdm(range(n)):
+        mol = mols_suppl[i]
+        if mol is None or len(mol.GetAtoms()) <= 1:
+            pass
+        else:
+            # 3D构象
+            signs = []
+            g = construct_bigraph_from_mol_int(mol, featurize_atoms)
+            d = AllChem.Get3DDistanceMatrix(mol)
+            d = d**2
+            sum_all=d.mean()
+            sum_r=d.mean(0,keepdims=True)
+            sum_c=d.mean(1,keepdims=True)
+            # Gram矩阵
+            G=(sum_all-sum_r-sum_c+d)*(-0.5)
+            name = mol.GetProp('_Name')
 
-n = len(mols_suppl)
-for i in tqdm(range(n)):
-    mol = mols_suppl[i]
-    if mol is None or len(mol.GetAtoms()) <= 1:
-        pass
-    else:
-        # 3D构象
-        signs = []
-        g = construct_bigraph_from_mol_int(mol, featurize_atoms)
-        d = AllChem.Get3DDistanceMatrix(mol)
-        d = d**2
-        sum_all=d.mean()
-        sum_r=d.mean(0,keepdims=True)
-        sum_c=d.mean(1,keepdims=True)
-        # Gram矩阵
-        G=(sum_all-sum_r-sum_c+d)*(-0.5)
-        name = mol.GetProp('_Name')
+            # dist and bond
+            pos = torch.tensor(mol.GetConformer().GetPositions(), dtype=torch.float)
 
-        # dist and bond
-        pos = torch.tensor(mol.GetConformer().GetPositions(), dtype=torch.float)
+            A = GetAdjacencyMatrix(mol)   # 创建邻接矩阵
+            coo_A = coo_matrix(A)
+            edge_index = [coo_A.row,coo_A.col]
+            num_nodes = mol.GetNumAtoms()
+            dist, angle, idx_i, idx_j, idx_k = xyztodat(pos, torch.tensor(edge_index,dtype=torch.long), num_nodes)
 
-        A = GetAdjacencyMatrix(mol)   # 创建邻接矩阵
-        coo_A = coo_matrix(A)
-        edge_index = [coo_A.row,coo_A.col]
-        num_nodes = mol.GetNumAtoms()
-        dist, angle, idx_i, idx_j, idx_k = xyztodat(pos, torch.tensor(edge_index,dtype=torch.long), num_nodes)
+            # # 三维坐标，平移到第一个点为0
+            # pos_3 = pos - pos[0]
 
-        # # 三维坐标，平移到第一个点为0
-        # pos_3 = pos - pos[0]
+            # tasks
+            row = pd_reader[pd_reader['mol_id'] == name]
+            mu = row.mu.values[0]
+            alpha = row.alpha.values[0]
+            HOMO = row.homo.values[0]
+            LUMO = row.lumo.values[0]
+            gap = row.gap.values[0]
+            R2 = row.r2.values[0]
+            ZPVE = row.zpve.values[0]
+            U0 = row.u0.values[0]
+            U = row.u298.values[0]
+            H = row.h298.values[0]
+            G_qm9 = row.g298.values[0]
+            Cv = row.cv.values[0]
 
-        # tasks
-        row = pd_reader[pd_reader['mol_id'] == name]
-        mu = row.mu.values[0]
-        alpha = row.alpha.values[0]
-        HOMO = row.homo.values[0]
-        LUMO = row.lumo.values[0]
-        gap = row.gap.values[0]
-        R2 = row.r2.values[0]
-        ZPVE = row.zpve.values[0]
-        U0 = row.u0.values[0]
-        U = row.u298.values[0]
-        H = row.h298.values[0]
-        G_qm9 = row.g298.values[0]
-        Cv = row.cv.values[0]
-
-        save_file = os.path.join(save_dir, 'all', name)
-        with open(save_file,"wb") as file:
-            pickle.dump((mol,g,G,pos,mu,alpha,HOMO,LUMO,gap,R2,ZPVE,U0,U,H,G_qm9,Cv,dist, angle, torch.tensor(edge_index,dtype=torch.long), idx_i, idx_j, idx_k), file)
+            save_file = os.path.join(save_dir, 'all', name)
+            with open(save_file,"wb") as file:
+                pickle.dump((mol,g,G,pos,mu,alpha,HOMO,LUMO,gap,R2,ZPVE,U0,U,H,G_qm9,Cv,dist, angle, torch.tensor(edge_index,dtype=torch.long), idx_i, idx_j, idx_k), file)
 
