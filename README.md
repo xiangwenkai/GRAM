@@ -38,9 +38,13 @@ pip install dgllife
 python geom_drugs/graphormer_geom_pretrain.py
 ```
 ### inference
-1.Prepare dataset \n
-You can refer to geom_drugs/prepare_dataset_drugs.py to prepare the dataset \n
-2.3D structure prediction \n
+1.Prepare dataset
+
+
+You can refer to geom_drugs/prepare_dataset_drugs.py to prepare the dataset
+
+
+2.3D structure prediction 
 ```shell
 python 3D_prediction.py
 ```
