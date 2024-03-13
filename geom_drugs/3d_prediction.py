@@ -85,41 +85,42 @@ def get_all_metric(y_true, y_pred):
     y_pred_ = y_pred[y_true != 0]
     return pearson_r2_score(y_true_, y_pred_), rmse_score(y_true_, y_pred_), mae_score(y_true_, y_pred_)
 
-test_sdf_paths = r"data\fastsmcg\processed\*"
-test_sdfs = glob.glob(test_sdf_paths)
-test_set = InteractionDataset(test_sdfs, load=True, n_jobs=10)
-num_samples = len(test_sdfs)
-print("train samples: {}\n".format(num_samples))
-
-bsz = 1
-test_loader = DataLoader(dataset=test_set, batch_size=bsz, shuffle=False, num_workers=1, collate_fn=collate_molgraphs)
-
-mu = 0.0
-sigma = 0.2
-
-loss_fn = nn.MSELoss(reduction='none')
-Blr_loss = nn.SmoothL1Loss()
-Bar_loss = nn.SmoothL1Loss()
-
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
-model = Graphormer(
-    n_layers=6,
-    num_heads=8,
-    hidden_dim=512,
-    sp_num_heads=8,
-    dropout_rate=0.1,
-    intput_dropout_rate=0.1,
-    ffn_dim=512,
-    attention_dropout_rate=0.1
-)
-
-PATH = r"models\pretraining_checkpoints_best.pt"
-
-model.load_state_dict(torch.load(PATH))
-model.to(device)
 
 if __name__ == '__main__':
+    test_sdf_paths = r"data\fastsmcg\processed\*"
+    test_sdfs = glob.glob(test_sdf_paths)
+    test_set = InteractionDataset(test_sdfs, load=True, n_jobs=10)
+    num_samples = len(test_sdfs)
+    print("train samples: {}\n".format(num_samples))
+
+    bsz = 1
+    test_loader = DataLoader(dataset=test_set, batch_size=bsz, shuffle=False, num_workers=1,
+                             collate_fn=collate_molgraphs)
+
+    loss_fn = nn.MSELoss(reduction='none')
+    Blr_loss = nn.SmoothL1Loss()
+    Bar_loss = nn.SmoothL1Loss()
+
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+    model = Graphormer(
+        n_layers=6,
+        num_heads=8,
+        hidden_dim=512,
+        sp_num_heads=8,
+        dropout_rate=0.1,
+        intput_dropout_rate=0.1,
+        ffn_dim=512,
+        attention_dropout_rate=0.1
+    )
+
+    PATH = r"models\pretraining_checkpoints_best.pt"
+
+    model.load_state_dict(torch.load(PATH))
+    model.to(device)
+    # mu = 0.0
+    # sigma = 0.2
+
     model.eval()
     t0 = time.time()
     tc = 0
@@ -135,7 +136,7 @@ if __name__ == '__main__':
         b_idx_k.to(device)
 
         atom_feats, bond_feats = bg.ndata.pop('hv'), bg.edata.pop('he')
-        atom_feats = atom_feats + torch.from_numpy(np.random.normal(mu, sigma, atom_feats.shape)).to(device)
+        # atom_feats = atom_feats + torch.from_numpy(np.random.normal(mu, sigma, atom_feats.shape)).to(device)
         atom_feats = backend.pad_packed_tensor(atom_feats.float(), bg.batch_num_nodes(), 0)
         attn_bias = torch.zeros([atom_feats.shape[0], atom_feats.shape[1], atom_feats.shape[1]],
                                 dtype=torch.float).to(device)
