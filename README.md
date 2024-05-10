@@ -46,5 +46,5 @@ You can refer to geom_drugs/prepare_dataset_drugs.py to prepare the dataset
 
 2.3D structure prediction 
 ```shell
-python 3D_prediction.py
+python geom_drugs/3d_prediction.py
 ```
