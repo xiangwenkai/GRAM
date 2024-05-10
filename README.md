@@ -16,6 +16,7 @@ pip install https://data.pyg.org/whl/torch-2.0.0%2Bcu117/torch_scatter-2.1.1%2Bp
 pip install dgllife
 pip install scikit-learn
 pip install rdkit
+pip install --upgrade MDAnalysis
 ```
 
 ### Linux：
@@ -30,6 +31,7 @@ pip install https://data.pyg.org/whl/torch-1.12.0%2Bcu113/torch_scatter-2.1.0%2B
 pip install https://data.pyg.org/whl/torch-1.12.0%2Bcu113/torch_sparse-0.6.16%2Bpt112cu113-cp38-cp38-linux_x86_64.whl
 pip install rdkit
 pip install dgllife
+pip install --upgrade MDAnalysis
 ```
 
 ## Usage
