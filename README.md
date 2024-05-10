@@ -3,9 +3,9 @@
 ![gram预训练模型总结](https://github.com/xiangwenkai/GRAM/assets/93317912/e8b3a482-c3ac-4003-8543-8c656087953c)
 
 
-## Environment Setup
+# Environment Setup
 
-### windows:
+## windows:
 ```shell
 conda create -n dgl python==3.8
 conda activate dgl
@@ -19,7 +19,7 @@ pip install rdkit
 pip install --upgrade MDAnalysis
 ```
 
-### Linux：
+## Linux：
 ```shell
 conda create -n dgl python==3.8
 conda activate dgl
@@ -34,32 +34,36 @@ pip install dgllife
 pip install --upgrade MDAnalysis
 ```
 
-## Usage
-### Prepare dataset(GEOM)  
+# Usage
+## 1.Prepare dataset(GEOM)  
 **step1** download data  
 Download rdkit_folder.tar.gz from https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/JNGTDF  
+
+
 **step2** decompression the data  
 ```
 tar -zcvf rdkit_folder.tar.gz geom_drugs/data/
-```  
+```
+
+
 **step3** processing the dataset  
 ```
 python geom_drugs/prepare_dataset_drugs.py
 ```
 
-### Prepare dataset(fastsmcg)  
+## Prepare dataset(fastsmcg)  
 source: https://github.com/wangzhehyd/fastsmcg/tree/main  
 all processed files are avaliable at ./geom_drugs/data/fastsmcg/processed  
 
-### training
+## Training
 ```shell
 python geom_drugs/graphormer_geom_pretrain.py
 ```
-### inference
-1.Prepare dataset
+## inference
+**step 1** Prepare dataset
 You can refer to the steps in "Prepare dataset" to prepare your dataset
 
-2.3D structure prediction 
+**step 2** 3D structure prediction 
 You should change the file path prepared first (example: the fastsmcg dataset path "./geom_drugs/data/fastsmcg/processed")  
 Then run:  
 ```shell
