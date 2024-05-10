@@ -48,7 +48,7 @@ tar -zcvf rdkit_folder.tar.gz geom_drugs/data/
 **step3** processing the dataset  
 ```
 python geom_drugs/prepare_dataset_drugs.py
-```
+```  
 
 ## 2.Prepare dataset(fastsmcg)  
 source: https://github.com/wangzhehyd/fastsmcg/tree/main  
@@ -57,16 +57,16 @@ all processed files are avaliable at ./geom_drugs/data/fastsmcg/processed
 ## Training
 ```shell
 python geom_drugs/graphormer_geom_pretrain.py
-```
+```  
 ## inference
-**step 1** Prepare dataset
-You can refer to the steps in "Prepare dataset" to prepare your dataset
+**step 1** Prepare dataset  
+You can refer to the steps in "Prepare dataset" to prepare your dataset  
 
-**step 2** 3D structure prediction 
+**step 2** 3D structure prediction  
 You should change the file path prepared first (example: the fastsmcg dataset path "./geom_drugs/data/fastsmcg/processed")  
 Then run:  
 ```shell
 python geom_drugs/3d_prediction.py
-```
+```  
 The RMSD will be printed when it finished.
 
