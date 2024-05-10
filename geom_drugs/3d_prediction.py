@@ -91,7 +91,7 @@ if __name__ == '__main__':
     test_sdfs = glob.glob(test_sdf_paths)
     test_set = InteractionDataset(test_sdfs, load=True, n_jobs=10)
     num_samples = len(test_sdfs)
-    print("train samples: {}\n".format(num_samples))
+    print("test samples: {}\n".format(num_samples))
 
     bsz = 1
     test_loader = DataLoader(dataset=test_set, batch_size=bsz, shuffle=False, num_workers=1,
