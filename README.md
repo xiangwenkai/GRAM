@@ -51,8 +51,9 @@ python geom_drugs/prepare_dataset_drugs.py
 ```  
 
 ## 2.Prepare dataset(fastsmcg)  
-source: https://github.com/wangzhehyd/fastsmcg/tree/main  
-all processed files are avaliable at ./geom_drugs/data/fastsmcg/processed  
+Source: https://github.com/wangzhehyd/fastsmcg/tree/main  
+All processed files are avaliable at ./geom_drugs/data/fastsmcg/processed  
+(here we use dataset-1)
 
 ## Training
 ```shell
