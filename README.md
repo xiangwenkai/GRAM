@@ -36,13 +36,13 @@ pip install --upgrade MDAnalysis
 
 ## Usage
 ### Prepare dataset(GEOM)  
-step1 download data  
+**step1** download data  
 Download rdkit_folder.tar.gz from https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/JNGTDF  
-step2 decompression the data  
+**step2** decompression the data  
 ```
 tar -zcvf rdkit_folder.tar.gz geom_drugs/data/
 ```  
-step3 processing the dataset  
+**step3** processing the dataset  
 ```
 python geom_drugs/prepare_dataset_drugs.py
 ```
