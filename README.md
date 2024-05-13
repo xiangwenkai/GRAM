@@ -53,9 +53,13 @@ python geom_drugs/prepare_dataset_drugs.py
 ## 2.Prepare dataset(fastsmcg)  
 Source: https://github.com/wangzhehyd/fastsmcg/tree/main  
 All processed files are avaliable at ./geom_drugs/data/fastsmcg/processed  
-(here we use dataset-1)
+(here we use dataset-1)  
 
-## Training
+## 3.Prepare dataset(moleculenet)  
+Source: https://moleculenet.org/datasets-1
+The raw dataset are alredy downloaded in data/moleculenet/
+
+## Pre-Training
 ```shell
 python geom_drugs/graphormer_geom_pretrain.py
 ```  
