@@ -80,16 +80,15 @@ def get_all_metric(y_true, y_pred):
 
 
 metric_name = ['epoch', 'val_r2', 'val_rmse', 'val_mae', 'test_r2', 'test_rmse', 'test_mae', 'loss']
-# out = open("/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/graphormer_geom_pretrain.txt", "a+")
-out = open("graphormer_geom_pretrain.txt", "a+")
+out = open("./out/graphormer_geom_pretrain.txt", "a+")
 out.write(",".join(metric_name)+"\n")
 
 # log = open("/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/log.txt", "w+")
 log = open("log.txt", "w+")
 
-train_sdf_paths = "data/geom_drugs/train/*"
-val_sdf_paths = "data/geom_drugs//val/*"
-test_sdf_paths = "data/geom_drugs/test/*"
+train_sdf_paths = "./data/geom_drugs/train/*"
+val_sdf_paths = "./data/geom_drugs/val/*"
+test_sdf_paths = "./data/geom_drugs/test/*"
 
 train_sdfs = glob.glob(train_sdf_paths)
 val_sdfs = glob.glob(val_sdf_paths)
@@ -128,15 +127,14 @@ model = Graphormer(
     attention_dropout_rate=0.1
 )
 
-PATH = r"C:\Users\xwk\PycharmProjects\dgl_graphormer_local\geom_drugs\model\checkpoints_126.pt"
-model.load_state_dict(torch.load(PATH))
-
+# PATH = "./models/checkpoints_1.pt"
+# model.load_state_dict(torch.load(PATH))
 
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001,
                              weight_decay=0.000000001)
 
-stopper = EarlyStopping(mode='lower', filename='models/gemo_graphormer_pretrain.pth', patience=80)
+stopper = EarlyStopping(mode='lower', filename='./out/gemo_graphormer_pretrain.pth', patience=80)
 if __name__ == '__main__':
     epoch = 0
     while True:
@@ -210,8 +208,7 @@ if __name__ == '__main__':
         train_time = time.time() - t0
         epoch += 1
         if epoch % 1 == 0:
-            torch.save(model.state_dict(), r'model\checkpoints_{}_{}.pt'.format(epoch, time.strftime("%Y%m%d%H", time.localtime())))
-            # torch.save(model.state_dict(), '/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/model/checkpoints_{}.pt'.format(epoch))
+            torch.save(model.state_dict(), './models/checkpoints_{}_{}.pt'.format(epoch, time.strftime("%Y%m%d%H", time.localtime())))
         train_loss_G = train_loss_G / (batch_id + 1)
         val_pre_G, val_label_G, val_loss_G = run_an_eval_epoch(model, val_loader)
         test_pre_G, test_label_G, test_loss_G = run_an_eval_epoch(model, test_loader)

@@ -68,10 +68,10 @@ def get_coor(G):
 
 if __name__ == "__main__":
     # change to where you untarred the rdkit folder
-    base_path = "./geom_drugs/data"
+    base_path = "./data/geom_drugs"
     drugs_file = os.path.join(base_path, "rdkit_folder/summary_drugs.json")
 
-    save_dir = "./geom_drugs/data/geom_drugs/processed"
+    save_dir = "./data/geom_drugs/processed"
 
     with open(drugs_file, "r") as f:
         drugs_summ = json.load(f)
