@@ -34,7 +34,9 @@ pip install dgllife
 pip install --upgrade MDAnalysis
 ```
 
-## 1.Prepare dataset(GEOM)  
+# Usage  
+## Prepare dataset  
+### 1.GEOM dataset  
 **step1** download data  
 Download rdkit_folder.tar.gz from https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/JNGTDF  
 
@@ -50,13 +52,13 @@ tar -zcvf rdkit_folder.tar.gz ./data/geom_drugs
 python ./codes/prepare_dataset_drugs.py
 ```  
 
-## 2.Prepare dataset(fastsmcg)  
+### 2.Fastsmcg dataset  
 Source: https://github.com/wangzhehyd/fastsmcg/tree/main  
 All processed files are avaliable at ./data/fastsmcg/processed  
 (here we use dataset-1)  
 
-## 3.Prepare dataset(moleculenet)  
-Source: https://moleculenet.org/datasets-1
+### 3.Moleculenet dataset  
+Source: https://moleculenet.org/datasets-1  
 The raw dataset are alredy downloaded in data/moleculenet/
 
 ## Pre-Training
