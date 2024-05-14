@@ -87,7 +87,7 @@ def get_all_metric(y_true, y_pred):
 
 
 if __name__ == '__main__':
-    test_sdf_paths = r"data\fastsmcg\processed\*"
+    test_sdf_paths = "./data/fastsmcg/processed/*"
     test_sdfs = glob.glob(test_sdf_paths)
     test_set = InteractionDataset(test_sdfs, load=True, n_jobs=10)
     num_samples = len(test_sdfs)
@@ -114,7 +114,7 @@ if __name__ == '__main__':
         attention_dropout_rate=0.1
     )
 
-    PATH = r"models\pretraining_checkpoints_best.pt"
+    PATH = "./models/pretraining_checkpoints_best.pt"
 
     model.load_state_dict(torch.load(PATH))
     model.to(device)

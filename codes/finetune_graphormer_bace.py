@@ -77,15 +77,15 @@ else:
     pretrain_flag = 'no3d'
 
 metric_name = ['epoch', 'val_score', 'test_score', 'train_loss', 'val_loss', 'test_loss']
-out = open("/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/graphormer_{}_finetune{}.txt".format(name, pretrain_flag), "a+")
+out = open("./out/graphormer_{}_finetune{}.txt".format(name, pretrain_flag), "a+")
 out.write(",".join(metric_name)+"\n")
 
 # log = open("/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/log.txt", "w+")
-log = open("log_{}.txt".format(name), "w+")
+log = open("./out/log_{}.txt".format(name), "w+")
 
-train_sdf_paths = "/cluster/home/wenkai/dgl_graphormer_local/dataset/{}/train/*".format(name)
-val_sdf_paths = "/cluster/home/wenkai/dgl_graphormer_local/dataset/{}/val/*".format(name)
-test_sdf_paths = "/cluster/home/wenkai/dgl_graphormer_local/dataset/{}/test/*".format(name)
+train_sdf_paths = "./data/{}/train/*".format(name)
+val_sdf_paths = "./data/{}/val/*".format(name)
+test_sdf_paths = "./data/{}/test/*".format(name)
 
 train_sdfs = glob.glob(train_sdf_paths)
 val_sdfs = glob.glob(val_sdf_paths)
@@ -125,11 +125,11 @@ if pretrain_feature:
         attention_dropout_rate=0.1
     )
     if pre_model_type == 'gram':
-        PATH = "/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/model/checkpoints_best.pt"
+        PATH = "./models/pretraining_checkpoints_best.pt"
     elif pre_model_type == 'rd':
-        PATH = "/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/model_rd/checkpoints_best.pt"
+        PATH = "./models/model_rd/checkpoints_best.pt"
     elif pre_model_type == 'coor':
-        PATH = "/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/model_coordinate/checkpoints_best.pt"
+        PATH = "./models/model_coordinate/checkpoints_best.pt"
     model_pretrain.load_state_dict(torch.load(PATH))
     model_pretrain.to(device)
 else:
@@ -175,7 +175,7 @@ loss_fn = nn.CrossEntropyLoss(torch.Tensor(weight).to(device), reduction='mean')
 
 optimizer = torch.optim.Adam(model_finetune.parameters(), lr=0.0001,
                              weight_decay=0.000000001)
-stopper = EarlyStopping(mode='higher', filename='/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/graphormer_{}_finetune.pth'.format(name), patience=80)
+stopper = EarlyStopping(mode='higher', filename='./out/graphormer_{}_finetune.pth'.format(name), patience=80)
 # stopper = EarlyStopping(mode='higher', filename='models/graphormer_{}_finetune.pth'.format(name), patience=80)
 scaler = GradScaler()
 
@@ -232,8 +232,7 @@ if __name__ == '__main__':
 
         early_stop = stopper.step(val_score, model_finetune)
         if epoch > 5 and val_score==stopper.best_score and pretrain_feature:
-             # torch.save(model_finetune.state_dict(), r'E:\MODEL\dgl_graphormer\model\graphormer_gemo_pretrain\base\checkpoints_{}_{}.pt'.format(epoch, time.strftime("%Y%m%d%H", time.localtime())))
-             torch.save(model_finetune.state_dict(), '/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/model_{}/checkpoints_{}_{}.pt'.format(name, epoch, pre_model_type))
+             torch.save(model_finetune.state_dict(), './models/model_{}/checkpoints_{}_{}.pt'.format(name, epoch, pre_model_type))
         print('epoch {:d}/{:d}, validation {} {:.3f}, best validation {} {:.3f}, epoch train time: {:.1f}'.format(
             epoch, 1000, 'auc',
             val_score, 'auc', stopper.best_score, train_time))

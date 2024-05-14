@@ -76,19 +76,15 @@ else:
     pretrain_flag = 'no3d'
 
 metric_name = ['epoch', 'val_rmse', 'val_mae', 'test_rmse', 'test_mae', 'train_loss', 'val_loss', 'test_loss']
-# out = open("/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/graphormer_{}_finetune{}.txt".format(name, pretrain_flag), "a+")
-out = open("C:/Users/xwk/PycharmProjects/dgl_graphormer_local/geom_drugs/graphormer_{}_finetune{}.txt".format(name, pretrain_flag), "a+")
+out = open("./out/graphormer_{}_finetune{}.txt".format(name, pretrain_flag), "a+")
 out.write(",".join(metric_name)+"\n")
 
 # log = open("/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/log.txt", "w+")
-log = open("log_{}.txt".format(name), "w+")
+log = open("./out/log_{}.txt".format(name), "w+")
 
-# train_sdf_paths = "/cluster/home/wenkai/dgl_graphormer_local/dataset/{}/train/*".format(name)
-# val_sdf_paths = "/cluster/home/wenkai/dgl_graphormer_local/dataset/{}/val/*".format(name)
-# test_sdf_paths = "/cluster/home/wenkai/dgl_graphormer_local/dataset/{}/test/*".format(name)
-train_sdf_paths = "C:/Users/xwk/PycharmProjects/dgl_graphormer_local/geom_drugs/data/{}/train/*".format(name)
-val_sdf_paths = "C:/Users/xwk/PycharmProjects/dgl_graphormer_local/geom_drugs/data/{}/val/*".format(name)
-test_sdf_paths = "C:/Users/xwk/PycharmProjects/dgl_graphormer_local/geom_drugs/data/{}/test/*".format(name)
+train_sdf_paths = "./data/{}/train/*".format(name)
+val_sdf_paths = "./data/{}/val/*".format(name)
+test_sdf_paths = "./data/{}/test/*".format(name)
 
 train_sdfs = glob.glob(train_sdf_paths)
 val_sdfs = glob.glob(val_sdf_paths)
@@ -123,8 +119,7 @@ if pretrain_feature:
         attention_dropout_rate=0.1
     )
 
-    # PATH = "/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/model/checkpoints_17.pt"
-    PATH = "C:/Users/xwk/PycharmProjects/dgl_graphormer_local/geom_drugs/model/checkpoints_105.pt"
+    PATH = "./models/pretraining_checkpoints_best.pt"
 
     model_pretrain.load_state_dict(torch.load(PATH))
 
@@ -150,8 +145,7 @@ loss_fn = nn.MSELoss(reduction='none')
 
 optimizer = torch.optim.Adam(model_finetune.parameters(), lr=0.0001,
                              weight_decay=0.00000001)
-# stopper = EarlyStopping(mode='lower', filename='/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/graphormer_{}_finetune.pth'.format(name), patience=80)
-stopper = EarlyStopping(mode='lower', filename='C:/Users/xwk/PycharmProjects/dgl_graphormer_local/models/graphormer_{}_finetune.pth'.format(name), patience=80)
+stopper = EarlyStopping(mode='lower', filename='./out/graphormer_{}_finetune.pth'.format(name), patience=80)
 scaler = GradScaler()
 
 if __name__ == '__main__':
@@ -208,16 +202,11 @@ if __name__ == '__main__':
 
         early_stop = stopper.step(val_score, model_finetune)
         if epoch > 10 and val_score==stopper.best_score and pretrain_feature:
-            # torch.save(model_finetune.state_dict(), '/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/model_{}/checkpoints_{}.pt'.format(name, epoch))
-            # torch.save(model_finetune.state_dict(), 'model_{}/checkpoints_{}.pt'.format(name, epoch))
-            diff = [abs(i[0]-j[0]) for i, j in zip(test_pre, test_label)]
-            print(diff)
-            argind = np.argsort(diff)[::-1]
-            print(np.array(test_sdfs)[argind[:5]])
+            torch.save(model_finetune.state_dict(), './models/model_{}/checkpoints_{}.pt'.format(name, epoch))
 
-        # print('epoch {:d}/{:d}, validation {} {:.3f}, best validation {} {:.3f}, epoch train time: {:.1f}'.format(
-        #     epoch, 1000, 'rmse',
-        #     val_score, 'rmse', stopper.best_score, train_time))
+        print('epoch {:d}/{:d}, validation {} {:.3f}, best validation {} {:.3f}, epoch train time: {:.1f}'.format(
+            epoch, 1000, 'rmse',
+            val_score, 'rmse', stopper.best_score, train_time))
 
         if early_stop:
             break
