@@ -227,7 +227,7 @@ if __name__ == '__main__':
         out.flush()
 
         early_stop = stopper.step(val_score, model_finetune)
-        if epoch > 5 and val_score==stopper.best_score and pretrain_feature:
+        if epoch > 1 and val_score==stopper.best_score and pretrain_feature:
              torch.save(model_finetune.state_dict(), './models/model_{}/checkpoints_{}.pt'.format(name, epoch))
         print('epoch {:d}/{:d}, validation {} {:.3f}, best validation {} {:.3f}, epoch train time: {:.1f}'.format(
             epoch, 1000, 'auc',
