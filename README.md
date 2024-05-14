@@ -41,18 +41,18 @@ Download rdkit_folder.tar.gz from https://dataverse.harvard.edu/dataset.xhtml?pe
 
 **step2** decompression the data  
 ```
-tar -zcvf rdkit_folder.tar.gz geom_drugs/data/
+tar -zcvf rdkit_folder.tar.gz ./data/geom_drugs
 ```
 
 
 **step3** processing the dataset  
 ```
-python geom_drugs/prepare_dataset_drugs.py
+python ./codes/prepare_dataset_drugs.py
 ```  
 
 ## 2.Prepare dataset(fastsmcg)  
 Source: https://github.com/wangzhehyd/fastsmcg/tree/main  
-All processed files are avaliable at ./geom_drugs/data/fastsmcg/processed  
+All processed files are avaliable at ./data/fastsmcg/processed  
 (here we use dataset-1)  
 
 ## 3.Prepare dataset(moleculenet)  
@@ -68,10 +68,10 @@ python geom_drugs/graphormer_geom_pretrain.py
 You can refer to the steps in "Prepare dataset" to prepare your dataset  
 
 **step 2** 3D structure prediction  
-You should change the file path prepared first (example: the fastsmcg dataset path "./geom_drugs/data/fastsmcg/processed")  
+You should change the file path prepared first (example: the fastsmcg dataset path "./data/fastsmcg/processed")  
 Then run:  
 ```shell
-python geom_drugs/3d_prediction.py
+python codes/3d_prediction.py
 ```  
 The RMSD will be printed when it finished.
 
