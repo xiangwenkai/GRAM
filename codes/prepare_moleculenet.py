@@ -1200,46 +1200,47 @@ def random_split(dataset, smiles_list, task_idx=None, null_value=0,
 
 
 if __name__ == "__main__":
-    name = 'sider'
-    d_path = './data/{}'.format(name)
+    # name = 'sider'
+    for name in ['sider', 'bbbp', 'tox21', 'toxcast', 'clintox', 'hiv', 'bace', 'lipophilicity', 'esol']:
+        d_path = './data/{}'.format(name)
 
-    downstream_dataset = MoleculeDataset(d_path, dataset=name)
-    downstream_smiles = pd.read_csv(os.path.join(d_path, 'processed', 'smiles.csv'), header=None)[0].tolist()
+        downstream_dataset = MoleculeDataset(d_path, dataset=name)
+        downstream_smiles = pd.read_csv(os.path.join(d_path, 'processed', 'smiles.csv'), header=None)[0].tolist()
 
-    train, val, test, (train_smiles, valid_smiles, test_smiles) = \
-                        scaffold_split(downstream_dataset,
-                                       downstream_smiles,
-                                       task_idx=None,
-                                       null_value=0,
-                                       frac_train=0.8,
-                                       frac_valid=0.1,
-                                       frac_test=0.1,
-                                       return_smiles=True)
+        train, val, test, (train_smiles, valid_smiles, test_smiles) = \
+                            scaffold_split(downstream_dataset,
+                                           downstream_smiles,
+                                           task_idx=None,
+                                           null_value=0,
+                                           frac_train=0.8,
+                                           frac_valid=0.1,
+                                           frac_test=0.1,
+                                           return_smiles=True)
 
-    split_map1 = {'train': train, 'val': val, 'test': test}
-    split_map2 = {'train': train_smiles, 'val': valid_smiles, 'test': test_smiles}
-    for split in ['train', 'val', 'test']:
-        save_dir = "/cluster/home/wenkai/dgl_graphormer_local/dataset/{}/{}".format(name, split)
-        os.makedirs(save_dir, exist_ok=True)
-        data = split_map1[split]
-        smiles = split_map2[split]
-        n = len(smiles)
-        print("{} samples: {}".format(split, n))
-        for i in tqdm(range(n)):
-            try:
-                smi = smiles[i]
-                mol = Chem.MolFromSmiles(smi)
-                mol = Chem.RemoveHs(mol)
-                num_nodes = mol.GetNumAtoms()
-                if num_nodes <= 5:
-                    continue
-                g = construct_bigraph_from_mol_int(mol, featurize_atoms)
-                ys = data[i].y
-                if name in ['sider', 'bbbp', 'tox21', 'toxcast', 'clintox', 'hiv', 'bace']:
-                    ys[ys != 1] = 0
-                filename = str(i)
-                g_path = os.path.join(save_dir, filename)
-                with open(g_path, "wb") as g_file:
-                    pickle.dump((mol, g, ys), g_file)
-            except:
-                print(smiles[i])
+        split_map1 = {'train': train, 'val': val, 'test': test}
+        split_map2 = {'train': train_smiles, 'val': valid_smiles, 'test': test_smiles}
+        for split in ['train', 'val', 'test']:
+            save_dir = "./data/{}/{}".format(name, split)
+            os.makedirs(save_dir, exist_ok=True)
+            data = split_map1[split]
+            smiles = split_map2[split]
+            n = len(smiles)
+            print("{} samples: {}".format(split, n))
+            for i in tqdm(range(n)):
+                try:
+                    smi = smiles[i]
+                    mol = Chem.MolFromSmiles(smi)
+                    mol = Chem.RemoveHs(mol)
+                    num_nodes = mol.GetNumAtoms()
+                    if num_nodes <= 5:
+                        continue
+                    g = construct_bigraph_from_mol_int(mol, featurize_atoms)
+                    ys = data[i].y
+                    if name in ['sider', 'bbbp', 'tox21', 'toxcast', 'clintox', 'hiv', 'bace']:
+                        ys[ys != 1] = 0
+                    filename = str(i)
+                    g_path = os.path.join(save_dir, filename)
+                    with open(g_path, "wb") as g_file:
+                        pickle.dump((mol, g, ys), g_file)
+                except:
+                    print(smiles[i])
