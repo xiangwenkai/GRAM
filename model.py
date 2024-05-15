@@ -301,14 +301,12 @@ class Graphormer(nn.Module):
         degree_embedding = self.de_en(bg)
 
         # graph_attn_bias
-        # 添加虚拟节点表示全图特征表示，之后按照图中正常节点处理
         n_graph, n_node = x.size()[:2]
         graph_attn_bias = attn_bias.clone()
         graph_attn_bias = graph_attn_bias.unsqueeze(1).repeat(
             1, self.num_heads, 1, 1)  # [n_graph, n_head, n_node+1, n_node+1]
 
         # spatial pos
-        # 空间编码,节点之间最短路径长度对应的可学习标量
         # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
         spatial_pos_bias = self.spatial_pos_encoder(bg).permute([0,3,1,2])
         graph_attn_bias = graph_attn_bias + spatial_pos_bias
@@ -318,7 +316,6 @@ class Graphormer(nn.Module):
         # graph_attn_bias += t
 
         # edge feature
-        # 每个节点对沿最短路径计算边特征和可学习嵌入点积的平均值，并作为偏置项添加到注意模块中
         # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
         edge_input = self.path_encoder(bg, attn_edge_type).permute(0, 3, 1, 2)
 
@@ -329,8 +326,6 @@ class Graphormer(nn.Module):
         node_feature = self.atom_encoder(x.long()).sum(dim=-2)  # [n_graph, n_node, n_hidden]
         if perturb is not None:
             pass
-
-        # 根据节点的入度、出度为每个节点分配两个实值嵌入向量，添加到节点特征中作为输入
 
         node_feature = node_feature + degree_embedding
         # graph_token_feature = self.graph_token.weight.unsqueeze(
@@ -359,24 +354,20 @@ class Graphormer(nn.Module):
         degree_embedding = self.de_en(bg)
 
         # graph_attn_bias
-        # 添加虚拟节点表示全图特征表示，之后按照图中正常节点处理
         n_graph, n_node = x.size()[:2]
         graph_attn_bias = attn_bias.clone()
         graph_attn_bias = graph_attn_bias.unsqueeze(1).repeat(
             1, self.num_heads, 1, 1)  # [n_graph, n_head, n_node+1, n_node+1]
 
         # spatial pos
-        # 空间编码,节点之间最短路径长度对应的可学习标量
         # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
         spatial_pos_bias = self.spatial_pos_encoder(bg).permute([0,3,1,2])
         graph_attn_bias = graph_attn_bias + spatial_pos_bias
         # reset spatial pos here
-        # 所有节点都和虚拟节点直接有边相连，则所有节点和虚拟节点之间的最短路径长度为1
         # t = self.graph_token_virtual_distance.weight.view(1, self.num_heads, 1)
         # graph_attn_bias += t
 
         # edge feature
-        # 每个节点对沿最短路径计算边特征和可学习嵌入点积的平均值，并作为偏置项添加到注意模块中
         # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
         edge_input = self.path_encoder(bg, attn_edge_type).permute(0, 3, 1, 2)
 
@@ -387,8 +378,6 @@ class Graphormer(nn.Module):
         node_feature = self.atom_encoder(x.long()).sum(dim=-2)  # [n_graph, n_node, n_hidden]
         if perturb is not None:
             pass
-
-        # 根据节点的入度、出度为每个节点分配两个实值嵌入向量，添加到节点特征中作为输入
 
         node_feature = node_feature + degree_embedding
         # graph_token_feature = self.graph_token.weight.unsqueeze(
@@ -444,25 +433,21 @@ class Graphormer_all(nn.Module):
         degree_embedding = self.de_en(bg)
 
         # graph_attn_bias
-        # 添加虚拟节点表示全图特征表示，之后按照图中正常节点处理
         n_graph, n_node = x.size()[:2]
         graph_attn_bias = attn_bias.clone()
         graph_attn_bias = graph_attn_bias.unsqueeze(1).repeat(
             1, self.num_heads, 1, 1)  # [n_graph, n_head, n_node+1, n_node+1]
 
         # spatial pos
-        # 空间编码,节点之间最短路径长度对应的可学习标量
         # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
         spatial_pos_bias = self.spatial_pos_encoder(bg).permute([0,3,1,2])
         graph_attn_bias[:, :, 1:, 1:] = graph_attn_bias[:, :, 1:, 1:] + spatial_pos_bias
         # reset spatial pos here
-        # 所有节点都和虚拟节点直接有边相连，则所有节点和虚拟节点之间的最短路径长度为1
         t = self.graph_token_virtual_distance.weight.view(1, self.num_heads, 1)
         graph_attn_bias[:, :, 1:, 0] = graph_attn_bias[:, :, 1:, 0] + t
         graph_attn_bias[:, :, 0, :] = graph_attn_bias[:, :, 0, :] + t
 
         # edge feature
-        # 每个节点对沿最短路径计算边特征和可学习嵌入点积的平均值，并作为偏置项添加到注意模块中
         # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
         edge_input = self.path_encoder(bg, attn_edge_type).permute(0, 3, 1, 2)
 
@@ -473,8 +458,6 @@ class Graphormer_all(nn.Module):
         node_feature = self.atom_encoder(x.long()).sum(dim=-2)  # [n_graph, n_node, n_hidden]
         if perturb is not None:
             pass
-
-        # 根据节点的入度、出度为每个节点分配两个实值嵌入向量，添加到节点特征中作为输入
 
         node_feature = node_feature + degree_embedding
         graph_token_feature = self.graph_token.weight.unsqueeze(
@@ -553,25 +536,21 @@ class Graphormer_finetune_regression(nn.Module):
         degree_embedding = self.de_en(bg)
 
         # graph_attn_bias
-        # 添加虚拟节点表示全图特征表示，之后按照图中正常节点处理
         n_graph, n_node = x.size()[:2]
         graph_attn_bias = attn_bias.clone()
         graph_attn_bias = graph_attn_bias.unsqueeze(1).repeat(
             1, self.num_heads, 1, 1)  # [n_graph, n_head, n_node+1, n_node+1]
 
         # spatial pos
-        # 空间编码,节点之间最短路径长度对应的可学习标量
         # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
         spatial_pos_bias = self.spatial_pos_encoder(bg).permute([0,3,1,2])
         graph_attn_bias[:, :, 1:, 1:] = graph_attn_bias[:, :, 1:, 1:] + spatial_pos_bias
         # reset spatial pos here
-        # 所有节点都和虚拟节点直接有边相连，则所有节点和虚拟节点之间的最短路径长度为1
         t = self.graph_token_virtual_distance.weight.view(1, self.num_heads, 1)
         graph_attn_bias[:, :, 1:, 0] = graph_attn_bias[:, :, 1:, 0] + t
         graph_attn_bias[:, :, 0, :] = graph_attn_bias[:, :, 0, :] + t
 
         # edge feature
-        # 每个节点对沿最短路径计算边特征和可学习嵌入点积的平均值，并作为偏置项添加到注意模块中
         # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
         edge_input = self.path_encoder(bg, attn_edge_type).permute(0, 3, 1, 2)
 
@@ -583,8 +562,6 @@ class Graphormer_finetune_regression(nn.Module):
 
         if perturb is not None:
             pass
-
-        # 根据节点的入度、出度为每个节点分配两个实值嵌入向量，添加到节点特征中作为输入
 
         node_feature = node_feature + degree_embedding
         graph_token_feature = self.graph_token.weight.unsqueeze(
@@ -663,25 +640,21 @@ class Graphormer_finetune(nn.Module):
         degree_embedding = self.de_en(bg)
 
         # graph_attn_bias
-        # 添加虚拟节点表示全图特征表示，之后按照图中正常节点处理
         n_graph, n_node = x.size()[:2]
         graph_attn_bias = attn_bias.clone()
         graph_attn_bias = graph_attn_bias.unsqueeze(1).repeat(
             1, self.num_heads, 1, 1)  # [n_graph, n_head, n_node+1, n_node+1]
 
         # spatial pos
-        # 空间编码,节点之间最短路径长度对应的可学习标量
         # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
         spatial_pos_bias = self.spatial_pos_encoder(bg).permute([0,3,1,2])
         graph_attn_bias[:, :, 1:, 1:] = graph_attn_bias[:, :, 1:, 1:] + spatial_pos_bias
         # reset spatial pos here
-        # 所有节点都和虚拟节点直接有边相连，则所有节点和虚拟节点之间的最短路径长度为1
         t = self.graph_token_virtual_distance.weight.view(1, self.num_heads, 1)
         graph_attn_bias[:, :, 1:, 0] = graph_attn_bias[:, :, 1:, 0] + t
         graph_attn_bias[:, :, 0, :] = graph_attn_bias[:, :, 0, :] + t
 
         # edge feature
-        # 每个节点对沿最短路径计算边特征和可学习嵌入点积的平均值，并作为偏置项添加到注意模块中
         # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
         edge_input = self.path_encoder(bg, attn_edge_type).permute(0, 3, 1, 2)
 
@@ -700,8 +673,6 @@ class Graphormer_finetune(nn.Module):
             pass
         if perturb is not None:
             pass
-
-        # 根据节点的入度、出度为每个节点分配两个实值嵌入向量，添加到节点特征中作为输入
 
         node_feature = node_feature + degree_embedding
         graph_token_feature = self.graph_token.weight.unsqueeze(
