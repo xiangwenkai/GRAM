@@ -1,5 +1,5 @@
 import torch
-from models import Graphormer
+from model import Graphormer
 from dgl import backend
 import torch.nn as nn
 import datetime
@@ -12,8 +12,8 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_error
 from dgllife.utils import EarlyStopping, Meter, RandomSplitter
 from torch.utils.data import DataLoader
-from interaction_dataset_bond_length_angle import InteractionDataset
-from utils_interaction_length_angle_torch import set_random_seed, collate_molgraphs
+from interaction_dataset_bond_length_angle_qm9 import InteractionDataset
+from utils_interaction_length_angle_torch_qm9 import set_random_seed, collate_molgraphs
 import time
 from torch.nn.utils.rnn import pad_sequence
 
@@ -82,7 +82,7 @@ def get_all_metric(y_true, y_pred):
 
 
 metric_name = ['epoch', 'val_r2', 'val_rmse', 'val_mae', 'test_r2', 'test_rmse', 'test_mae', 'loss']
-out = open("qm9_graphormer_pretrain.txt", "w")
+out = open("out/qm9_graphormer_pretrain.txt", "w")
 out.write(",".join(metric_name) + "\n")
 set_random_seed(123)
 all_sdf_paths = "data/qm9/processed/*"
@@ -121,7 +121,8 @@ model.load_state_dict(torch.load(PATH))
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001,
                              weight_decay=0.000000001)
-stopper = EarlyStopping(mode='lower', filename='models/qm9_graphormer_pretrain.pth', patience=80)
+stopper = EarlyStopping(mode='lower', filename='out/qm9_graphormer_pretrain.pth', patience=80)
+
 if __name__ == '__main__':
     epoch = 0
     while True:

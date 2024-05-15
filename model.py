@@ -404,3 +404,324 @@ class Graphormer(nn.Module):
 
         return features
 
+
+class Graphormer_all(nn.Module):
+    def __init__(
+        self,
+        n_layers,
+        num_heads,
+        hidden_dim,
+        sp_num_heads,
+        dropout_rate,
+        intput_dropout_rate,
+        ffn_dim,
+        attention_dropout_rate,
+    ):
+        super().__init__()
+
+        self.num_heads = num_heads
+        self.atom_encoder = nn.Embedding(1024*24+1, hidden_dim)
+        self.spatial_pos_encoder = SpatialEncoderBatch(max_dist=2, num_heads=sp_num_heads)
+        self.path_encoder = PathEncoderBatch(2, 7, num_heads=sp_num_heads)
+        self.de_en = DegreeEncoderBatch(5, hidden_dim)
+        self.input_dropout = nn.Dropout(intput_dropout_rate)
+        encoders = [GraphormerLayer(ffn_dim, hidden_dim, num_heads, dropout=dropout_rate, attn_dropout=attention_dropout_rate)
+                    for _ in range(n_layers)]
+        self.layers = nn.ModuleList(encoders)
+        self.final_ln = nn.LayerNorm(hidden_dim)
+
+        self.graph_token = nn.Embedding(1, hidden_dim)
+        self.graph_token_virtual_distance = nn.Embedding(1, num_heads)
+
+        self.hidden_dim = hidden_dim
+        self.apply(lambda module: init_params(module, n_layers=n_layers))
+        self.node_proc = NodeTaskHead(hidden_dim, self.num_heads)
+
+        self.down_stream_pj = nn.Linear(hidden_dim, 3)
+
+
+    def forward(self, bg, x, attn_bias,attn_edge_type, perturb=None):
+        degree_embedding = self.de_en(bg)
+
+        # graph_attn_bias
+        # 添加虚拟节点表示全图特征表示，之后按照图中正常节点处理
+        n_graph, n_node = x.size()[:2]
+        graph_attn_bias = attn_bias.clone()
+        graph_attn_bias = graph_attn_bias.unsqueeze(1).repeat(
+            1, self.num_heads, 1, 1)  # [n_graph, n_head, n_node+1, n_node+1]
+
+        # spatial pos
+        # 空间编码,节点之间最短路径长度对应的可学习标量
+        # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
+        spatial_pos_bias = self.spatial_pos_encoder(bg).permute([0,3,1,2])
+        graph_attn_bias[:, :, 1:, 1:] = graph_attn_bias[:, :, 1:, 1:] + spatial_pos_bias
+        # reset spatial pos here
+        # 所有节点都和虚拟节点直接有边相连，则所有节点和虚拟节点之间的最短路径长度为1
+        t = self.graph_token_virtual_distance.weight.view(1, self.num_heads, 1)
+        graph_attn_bias[:, :, 1:, 0] = graph_attn_bias[:, :, 1:, 0] + t
+        graph_attn_bias[:, :, 0, :] = graph_attn_bias[:, :, 0, :] + t
+
+        # edge feature
+        # 每个节点对沿最短路径计算边特征和可学习嵌入点积的平均值，并作为偏置项添加到注意模块中
+        # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
+        edge_input = self.path_encoder(bg, attn_edge_type).permute(0, 3, 1, 2)
+
+        graph_attn_bias[:, :, 1:, 1:] = graph_attn_bias[:, :, 1:, 1:] + edge_input
+        graph_attn_bias = graph_attn_bias + attn_bias.unsqueeze(1)  # reset
+
+        # node feauture + graph token
+        node_feature = self.atom_encoder(x.long()).sum(dim=-2)  # [n_graph, n_node, n_hidden]
+        if perturb is not None:
+            pass
+
+        # 根据节点的入度、出度为每个节点分配两个实值嵌入向量，添加到节点特征中作为输入
+
+        node_feature = node_feature + degree_embedding
+        graph_token_feature = self.graph_token.weight.unsqueeze(
+            0).repeat(n_graph, 1, 1)
+        node_feature = torch.cat(
+            [graph_token_feature, node_feature], dim=1)
+
+        # transfomrer encoder
+        output = self.input_dropout(node_feature)
+        for enc_layer in self.layers:
+            output = enc_layer(output, graph_attn_bias.permute(0, 2, 3, 1))
+        output = self.final_ln(output)
+
+        # delta_pos = pos.unsqueeze(1) - pos.unsqueeze(2)
+        # dist = delta_pos.norm(dim=-1)
+        # delta_pos /= dist.unsqueeze(-1) + 1e-5
+        # node_output_gram1 = self.node_proc(output, graph_attn_bias, delta_pos)  # bsz_size n_node n_node
+        output = self.down_stream_pj(output)
+        k = output[:, 1:, :].view(-1, 3)
+        node_output_gram = torch.bmm(output[:, 1:, :], output[:, 1:, :].permute([0, 2, 1]))
+        return k, node_output_gram
+
+
+class Graphormer_finetune_regression(nn.Module):
+    def __init__(
+            self,
+            n_layers,
+            num_heads,
+            hidden_dim,
+            sp_num_heads,
+            dropout_rate,
+            intput_dropout_rate,
+            ffn_dim,
+            attention_dropout_rate,
+            n_tasks=12,
+
+    ):
+        super().__init__()
+
+        self.num_heads = num_heads
+        self.atom_encoder = nn.Embedding(1024*24+1, hidden_dim)
+        self.spatial_pos_encoder = SpatialEncoderBatch(max_dist=2, num_heads=sp_num_heads)
+        self.path_encoder = PathEncoderBatch(2, 7, num_heads=sp_num_heads)
+        self.de_en = DegreeEncoderBatch(5, hidden_dim)
+        self.input_dropout = nn.Dropout(intput_dropout_rate)
+        encoders = [GraphormerLayer(ffn_dim, hidden_dim, num_heads, dropout=dropout_rate, attn_dropout=attention_dropout_rate)
+                    for _ in range(n_layers)]
+        self.layers = nn.ModuleList(encoders)
+        self.final_ln = nn.LayerNorm(hidden_dim)
+        self.pre_final_ln = nn.LayerNorm(hidden_dim)
+
+        self.graph_token = nn.Embedding(1, hidden_dim)
+        self.graph_token_virtual_distance = nn.Embedding(1, num_heads)
+
+        self.pre_layers = nn.ModuleList([GraphormerLayer(ffn_dim, hidden_dim, num_heads, dropout=dropout_rate, attn_dropout=attention_dropout_rate)
+                           for _ in range(1)])
+        self.pre_graph_token = nn.Embedding(1, hidden_dim)
+        self.pre_graph_token_virtual_distance = nn.Embedding(1, num_heads)
+
+        self.hidden_dim = hidden_dim
+        # self.node_proc = NodeTaskHead(hidden_dim, self.num_heads)
+
+        # self.fc = nn.Linear(hidden_dim * 2, hidden_dim)
+        self.fc1 = nn.Sequential(*[MLPBlock(hidden_dim, hidden_dim), Residual(MLPBlock(hidden_dim, hidden_dim))])
+        # self.fc2 = nn.Linear(hidden_dim*4, hidden_dim)
+
+        # self.fn = nn.Linear(hidden_dim, 64)
+        # self.out_proj = nn.Linear(hidden_dim, n_tasks)
+        self.pred1 = nn.Linear(hidden_dim, n_tasks)
+        self.pred2 = nn.Linear(hidden_dim*2, n_tasks)
+
+        self.apply(lambda module: init_params(module, n_layers=n_layers))
+
+
+    def forward(self, bg, x, attn_bias,attn_edge_type, node_feature_3d=None, perturb=None):
+        degree_embedding = self.de_en(bg)
+
+        # graph_attn_bias
+        # 添加虚拟节点表示全图特征表示，之后按照图中正常节点处理
+        n_graph, n_node = x.size()[:2]
+        graph_attn_bias = attn_bias.clone()
+        graph_attn_bias = graph_attn_bias.unsqueeze(1).repeat(
+            1, self.num_heads, 1, 1)  # [n_graph, n_head, n_node+1, n_node+1]
+
+        # spatial pos
+        # 空间编码,节点之间最短路径长度对应的可学习标量
+        # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
+        spatial_pos_bias = self.spatial_pos_encoder(bg).permute([0,3,1,2])
+        graph_attn_bias[:, :, 1:, 1:] = graph_attn_bias[:, :, 1:, 1:] + spatial_pos_bias
+        # reset spatial pos here
+        # 所有节点都和虚拟节点直接有边相连，则所有节点和虚拟节点之间的最短路径长度为1
+        t = self.graph_token_virtual_distance.weight.view(1, self.num_heads, 1)
+        graph_attn_bias[:, :, 1:, 0] = graph_attn_bias[:, :, 1:, 0] + t
+        graph_attn_bias[:, :, 0, :] = graph_attn_bias[:, :, 0, :] + t
+
+        # edge feature
+        # 每个节点对沿最短路径计算边特征和可学习嵌入点积的平均值，并作为偏置项添加到注意模块中
+        # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
+        edge_input = self.path_encoder(bg, attn_edge_type).permute(0, 3, 1, 2)
+
+        graph_attn_bias[:, :, 1:, 1:] = graph_attn_bias[:, :, 1:, 1:] + edge_input
+        graph_attn_bias = graph_attn_bias + attn_bias.unsqueeze(1)  # reset
+
+        # node feauture + graph token
+        node_feature = self.atom_encoder(x.long()).sum(dim=-2)  # [n_graph, n_node, n_hidden]
+
+        if perturb is not None:
+            pass
+
+        # 根据节点的入度、出度为每个节点分配两个实值嵌入向量，添加到节点特征中作为输入
+
+        node_feature = node_feature + degree_embedding
+        graph_token_feature = self.graph_token.weight.unsqueeze(
+            0).repeat(n_graph, 1, 1)
+        node_feature = torch.cat(
+            [graph_token_feature, node_feature], dim=1)
+
+        # transfomrer encoder
+        output = self.input_dropout(node_feature)
+        for enc_layer in self.layers:
+            output = enc_layer(output, graph_attn_bias.permute(0, 2, 3, 1))
+        output = self.final_ln(output)
+        if node_feature_3d is not None:
+            pre_graph_token_feature = self.pre_graph_token.weight.unsqueeze(
+                0).repeat(n_graph, 1, 1)
+            node_feature_3d = torch.cat(
+                [pre_graph_token_feature, node_feature_3d], dim=1)
+            for pre_enc_layer in self.pre_layers:
+                node_feature_3d = pre_enc_layer(node_feature_3d, attn_bias=None)
+            node_feature_3d = self.pre_final_ln(node_feature_3d)
+
+            output = torch.cat((output, node_feature_3d), 2)
+            output = self.pred2(output[:, 0, :])
+        else:
+            output = self.pred1(output[:, 0, :])
+        return output
+
+
+class Graphormer_finetune(nn.Module):
+    def __init__(
+            self,
+            n_layers,
+            num_heads,
+            hidden_dim,
+            sp_num_heads,
+            dropout_rate,
+            intput_dropout_rate,
+            ffn_dim,
+            attention_dropout_rate,
+            n_tasks=12,
+
+    ):
+        super().__init__()
+
+        self.num_heads = num_heads
+        self.atom_encoder = nn.Embedding(1024*24+1, hidden_dim)
+        self.spatial_pos_encoder = SpatialEncoderBatch(max_dist=2, num_heads=sp_num_heads)
+        self.path_encoder = PathEncoderBatch(2, 7, num_heads=sp_num_heads)
+        self.de_en = DegreeEncoderBatch(5, hidden_dim)
+        self.input_dropout = nn.Dropout(intput_dropout_rate)
+        encoders = [GraphormerLayer(ffn_dim, hidden_dim, num_heads, dropout=dropout_rate, attn_dropout=attention_dropout_rate)
+                    for _ in range(n_layers)]
+        self.layers = nn.ModuleList(encoders)
+        self.final_ln = nn.LayerNorm(hidden_dim)
+
+        self.graph_token = nn.Embedding(1, hidden_dim)
+        self.graph_token_virtual_distance = nn.Embedding(1, num_heads)
+
+        self.hidden_dim = hidden_dim
+
+        self.fc1 = nn.Linear(hidden_dim * 2, hidden_dim)
+
+        # self.fc1 = nn.Sequential(*[MLPBlock(hidden_dim*2, 512), Residual(MLPBlock(512, 512)),
+        #                          nn.Linear(512, n_tasks)])
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.fn = nn.Linear(hidden_dim, 64)
+        self.out_proj = nn.Linear(64, n_tasks)
+        # self.out_proj = nn.Linear(hidden_dim, n_tasks)
+        # self.pred1 = nn.Sequential(*[MLPBlock(hidden_dim, 512), Residual(MLPBlock(512, 512)),
+        #                              nn.Linear(512, n_tasks)])
+
+        self.apply(lambda module: init_params(module, n_layers=n_layers))
+
+
+    def forward(self, bg, x, attn_bias,attn_edge_type, node_feature_3d=None, perturb=None):
+        degree_embedding = self.de_en(bg)
+
+        # graph_attn_bias
+        # 添加虚拟节点表示全图特征表示，之后按照图中正常节点处理
+        n_graph, n_node = x.size()[:2]
+        graph_attn_bias = attn_bias.clone()
+        graph_attn_bias = graph_attn_bias.unsqueeze(1).repeat(
+            1, self.num_heads, 1, 1)  # [n_graph, n_head, n_node+1, n_node+1]
+
+        # spatial pos
+        # 空间编码,节点之间最短路径长度对应的可学习标量
+        # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
+        spatial_pos_bias = self.spatial_pos_encoder(bg).permute([0,3,1,2])
+        graph_attn_bias[:, :, 1:, 1:] = graph_attn_bias[:, :, 1:, 1:] + spatial_pos_bias
+        # reset spatial pos here
+        # 所有节点都和虚拟节点直接有边相连，则所有节点和虚拟节点之间的最短路径长度为1
+        t = self.graph_token_virtual_distance.weight.view(1, self.num_heads, 1)
+        graph_attn_bias[:, :, 1:, 0] = graph_attn_bias[:, :, 1:, 0] + t
+        graph_attn_bias[:, :, 0, :] = graph_attn_bias[:, :, 0, :] + t
+
+        # edge feature
+        # 每个节点对沿最短路径计算边特征和可学习嵌入点积的平均值，并作为偏置项添加到注意模块中
+        # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
+        edge_input = self.path_encoder(bg, attn_edge_type).permute(0, 3, 1, 2)
+
+        graph_attn_bias[:, :, 1:, 1:] = graph_attn_bias[:, :, 1:, 1:] + edge_input
+        graph_attn_bias = graph_attn_bias + attn_bias.unsqueeze(1)  # reset
+
+        # node feauture + graph token
+        node_feature = self.atom_encoder(x.long()).sum(dim=-2)  # [n_graph, n_node, n_hidden]
+
+        if node_feature_3d is not None:
+            node_feature = torch.cat((node_feature, node_feature_3d), 2)
+            node_feature = self.fc1(node_feature)
+            # node_feature = node_feature + node_feature_3d
+        else:
+            # node_feature = self.fc2(node_feature)
+            pass
+        if perturb is not None:
+            pass
+
+        # 根据节点的入度、出度为每个节点分配两个实值嵌入向量，添加到节点特征中作为输入
+
+        node_feature = node_feature + degree_embedding
+        graph_token_feature = self.graph_token.weight.unsqueeze(
+            0).repeat(n_graph, 1, 1)
+        node_feature = torch.cat(
+            [graph_token_feature, node_feature], dim=1)
+
+        # transfomrer encoder
+        output = self.input_dropout(node_feature)
+        for enc_layer in self.layers:
+            output = enc_layer(output, graph_attn_bias.permute(0, 2, 3, 1))
+        output = self.final_ln(output)
+
+        output = self.fn(output)
+        output = self.out_proj(output[:, 0, :])
+
+        # output = self.pred1(output[:, 0, :])
+
+        # output = self.out_proj(output[:, 0, :])
+
+        return output
+
+

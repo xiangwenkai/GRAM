@@ -1,7 +1,7 @@
 from rdkit import Chem
 
 
-# 1. 读取模块
+# 1. read
 def get_mol(smiles):
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
@@ -10,12 +10,12 @@ def get_mol(smiles):
     return mol
 
 
-# 2. 输出模块
+# 2. output
 def get_smiles(mol):
     return Chem.MolToSmiles(mol, kekuleSmiles=True)
 
 
-# 3. 标准化模块
+# 3. standard
 def sanitize(mol):
     try:
         smiles = get_smiles(mol)

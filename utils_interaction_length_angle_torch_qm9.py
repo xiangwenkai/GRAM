@@ -75,17 +75,38 @@ def pad_array(array, shape,):
     padded_array[:array.shape[0], :array.shape[1]] = array
     return padded_array
 def collate_molgraphs(data):
-    mol,g,G, pos,dist, angle, edge_index, idx_i, idx_j, idx_k = map(list, zip(*data))
-    # g, G, pos, dist, angle = map(list, zip(*data))
+    """Batching a list of datapoints for dataloader.
+
+    Parameters
+    ----------
+    data : list of 4-tuples.
+        Each tuple is for a single datapoint, consisting of
+        a SMILES, a DGLGraph, all-task labels and a binary
+        mask indicating the existence of labels.
+
+    Returns
+    -------
+    smiles : list
+        List of smiles
+    bg : DGLGraph
+        The batched DGLGraph.
+    labels : Tensor of dtype float32 and shape (B, T)
+        Batched datapoint labels. B is len(data) and
+        T is the number of total tasks.
+    masks : Tensor of dtype float32 and shape (B, T)
+        Batched datapoint binary mask, indicating the
+        existence of labels.
+    """
+    mol,g,G, pos, dist, angle, edge_index, idx_i, idx_j, idx_k = map(list, zip(*data))
     bg = dgl.batch(g)
     max_atoms=max([m.shape[1] for m in G])   #
-    G = [pad_array(r,shape=(max_atoms,max_atoms)) for r in G]  #
-    G = torch.stack(G)
+    G= [pad_array(r,shape=(max_atoms,max_atoms)) for r in G]  #
+    G=torch.stack(G)
     batch_dist = torch.cat(dist)
     batch_angle = torch.cat(angle)
     num_steps_list2 = torch.tensor([0] + [max_atoms for i in range(len(mol) -1)])
     num_steps_list2 = torch.cumsum(num_steps_list2, dim=0)
-    repeats = torch.tensor([i.shape[1] for i in edge_index])
+    repeats = torch.tensor([len(i.GetBonds())*2 for i in mol])
     batch_idx_repeated_offsets = torch.repeat_interleave(num_steps_list2, repeats)
     batch_edge_index = torch.cat([index for i,index in enumerate(edge_index)], dim=1) + batch_idx_repeated_offsets
     repeats_i = torch.tensor([len(i) for i in idx_i])
@@ -98,15 +119,5 @@ def collate_molgraphs(data):
     batch_idx_repeated_offsets_k = torch.repeat_interleave(num_steps_list2, repeats_k)
     batch_idx_k = torch.cat([index for i,index in enumerate(idx_k)], dim=0) + batch_idx_repeated_offsets_k
 
-    # pos = [pad_array(r, shape=(max_atoms, 3)) for r in pos]
-    # pos = torch.stack(pos)
-
-    return mol, bg, G, batch_dist, pos, batch_angle, batch_edge_index, batch_idx_i, batch_idx_j, batch_idx_k
-    # return bg, G, pos, batch_dist, batch_angle
-
-
-def collate_molgraphs_moleculenet(data):
-    g, tasks = map(list, zip(*data))
-    bg = dgl.batch(g)
-    tasks = torch.stack(tasks)
-    return bg, tasks
+    pos = pad_sequence(pos, batch_first=True, padding_value=-0.)
+    return mol, bg, G, pos, batch_dist, batch_angle, batch_edge_index, batch_idx_i, batch_idx_j, batch_idx_k

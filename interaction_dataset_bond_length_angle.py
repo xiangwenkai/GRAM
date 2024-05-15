@@ -83,8 +83,6 @@ class InteractionDataset(object):
     def __init__(self,  data_paths, load=True, n_jobs=10,log_every=1000, init_mask=True
                  ):
         self.data_paths=data_paths
-        
-        
 
     def __getitem__(self, item):
         """Get datapoint with index
@@ -106,11 +104,12 @@ class InteractionDataset(object):
             Binary masks indicating the existence of labels for all tasks. This is only
             generated when ``init_mask`` is True in the initialization.
         """
-        sdf=self.data_paths[item]
-        [mol, g, G, pos, mu, alpha, HOMO, LUMO, gap, R2, ZPVE, U0, U, H, G_qm9, Cv, dist, angle, edge_index, idx_i, idx_j, idx_k]=pickle.load(open(sdf, 'rb'))
+        sdf = self.data_paths[item]
+        [mol, g, G, pos, dist, angle, edge_index, idx_i, idx_j, idx_k] = pickle.load(open(sdf, 'rb'))
         g.ndata['hv'] = convert_to_single_emb(g.ndata['hv'])
         G = torch.tensor(G)
-        return mol, g, G, pos, dist, angle, torch.from_numpy(np.array(edge_index)), idx_i, idx_j, idx_k
+        # return mol, g, G, pos, dist, angle, torch.from_numpy(np.array(edge_index)), idx_i, idx_j, idx_k
+        return mol, g, G, pos, dist, angle, edge_index, idx_i, idx_j, idx_k
 
     def __len__(self):
         """Size for the dataset
@@ -122,3 +121,17 @@ class InteractionDataset(object):
         """
         return len(self.data_paths)
 
+
+class InteractionDataset_moleculenet(object):
+    def __init__(self,  data_paths, load=True, n_jobs=10,log_every=1000, init_mask=True
+                 ):
+        self.data_paths=data_paths
+
+    def __getitem__(self, item):
+        sdf = self.data_paths[item]
+        [mol, g, tasks] = pickle.load(open(sdf, 'rb'))
+        g.ndata['hv'] = convert_to_single_emb(g.ndata['hv'])
+        return g, tasks
+
+    def __len__(self):
+        return len(self.data_paths)
