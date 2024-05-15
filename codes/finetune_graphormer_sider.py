@@ -174,7 +174,7 @@ TASKS = ['Hepatobiliary disorders',
          'Ear and labyrinth disorders', 'Cardiac disorders',
          'Nervous system disorders',
          'Injury, poisoning and procedural complications']
-weights = pickle.load(open('./data/sider/weights.pkl', 'rb'))
+weights = pickle.load(open('./data/moleculenet/sider/weights.pkl', 'rb'))
 loss_fn = []
 for weight in weights:
     loss_func = nn.CrossEntropyLoss(torch.Tensor(weight).to(device), reduction='mean')

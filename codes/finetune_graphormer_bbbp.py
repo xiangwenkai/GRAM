@@ -143,7 +143,6 @@ model_finetune = Graphormer_finetune(
 
 model_finetune.to(device)
 
-# weights = pickle.load(open('/cluster/home/wenkai/dgl_graphormer_local/dataset/{}/weights.pkl'.format(name), 'rb'))
 
 positive, negative = 0, 0
 for data in train_set:

@@ -163,7 +163,7 @@ model_finetune.to(device)
 
 TASKS = ['T{}'.format(i) for i in range(617)]
 
-weights = pickle.load(open('./data/{}/weights.pkl'.format(name), 'rb'))
+weights = pickle.load(open('./data/moleculenet/{}/weights.pkl'.format(name), 'rb'))
 loss_fn = []
 for weight in weights:
     loss_func = nn.CrossEntropyLoss(torch.Tensor(weight).to(device), reduction='mean')

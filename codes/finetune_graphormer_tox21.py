@@ -162,7 +162,7 @@ model_finetune.to(device)
 
 TASKS = ['NR-AR', 'NR-AR-LBD', 'NR-AhR', 'NR-Aromatase', 'NR-ER', 'NR-ER-LBD',
          'NR-PPAR-gamma', 'SR-ARE', 'SR-ATAD5', 'SR-HSE', 'SR-MMP', 'SR-p53']
-weights = pickle.load(open('./data/{}/weights.pkl'.format(name), 'rb'))
+weights = pickle.load(open('./data/moleculenet/{}/weights.pkl'.format(name), 'rb'))
 loss_fn = []
 for weight in weights:
     loss_func = nn.CrossEntropyLoss(torch.Tensor(weight).to(device), reduction='mean')
