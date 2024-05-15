@@ -25,12 +25,12 @@ tar -zcvf rdkit_folder.tar.gz ./data/geom_drugs
 
 **step3** processing the dataset  
 ```
-python codes/prepare_dataset_drugs.py
+python prepare_dataset_drugs.py
 ```  
 
 ### 2.Fastsmcg dataset  
 Source: https://github.com/wangzhehyd/fastsmcg/tree/main  
-All processed files are avaliable at ./data/fastsmcg/processed  
+All processed files are avaliable at data/fastsmcg/processed  
 (here we use dataset-1)  
 
 ### 3.Moleculenet dataset  
@@ -39,7 +39,7 @@ The raw dataset are alredy downloaded in data/moleculenet/
 
 ## Pre-Training
 ```shell
-python codes/graphormer_geom_pretrain.py
+python graphormer_geom_pretrain.py
 ```  
 ## Pre-Training model for Conformer prediction
 **step 1** Prepare dataset  
@@ -49,18 +49,18 @@ You can refer to the steps in "Prepare dataset" to prepare your dataset
 You should change the file path prepared first (example: the fastsmcg dataset path "./data/fastsmcg/processed")  
 Then run:  
 ```shell
-python codes/3d_prediction.py
+python 3d_prediction.py
 ```  
 The RMSD will be printed when it finished.  
 
 ## property prediction model  
 ### 1.Prepare data
 ```
-python codes/prepare_moleculenet.py  
+python prepare_moleculenet.py  
 ```
 ### 2.Training (take Sider dataset for example)  
 ```
-python codes/finetune_graphormer_sider.py
+python finetune_graphormer_sider.py
 ```
 
 
