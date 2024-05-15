@@ -60,7 +60,7 @@ def run_an_eval_epoch(model, model_3D, val_loader):
         train_loss = (train_loss + loss)
 
         all_pre.extend(pred_.numpy())
-        all_label.extend(tasks.flatten().numpy())
+        all_label.extend(tasks.flatten().cpu().numpy())
 
         train_loss = (train_loss + loss)
 
