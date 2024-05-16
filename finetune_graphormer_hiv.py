@@ -97,7 +97,7 @@ val_set = InteractionDataset_moleculenet(val_sdfs, load=True, n_jobs=10)
 test_set = InteractionDataset_moleculenet(test_sdfs, load=True, n_jobs=10)
 
 num_samples = len(train_sdfs)
-print("train samples: {}\n".format(num_samples))
+# print("train samples: {}\n".format(num_samples))
 
 bsz = 16
 train_loader = DataLoader(dataset=train_set, batch_size=bsz, shuffle=True, num_workers=10, collate_fn=collate_molgraphs_moleculenet)
