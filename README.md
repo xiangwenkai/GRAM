@@ -6,7 +6,7 @@
 ## Environment Setup
 You can follow the command to create the conda environment:   
 ```
-conda create --name TFM --file requirements.txt
+conda create --name GRAM --file requirements.txt
 ```
 
 
