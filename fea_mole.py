@@ -364,15 +364,10 @@ def featurize_atoms(mol):
 #        print(acsf)
 #        print(dict_a['molFileAlias'])
         atom_num=atom.GetAtomicNum()
-        feats.append(  [atom_num,table.GetRvdw(atom_num)]+atom_hybridization_one_hot(atom)+[
-                      
-                      
-                     
+        feats.append([atom_num,table.GetRvdw(atom_num)]+atom_hybridization_one_hot(atom)+[
                       formal_charge(atom),
-                      
                       atom.GetNumRadicalElectrons(),
                       int(atom.GetIsAromatic()),
-                      
                     num_implicit_hydrogens(atom),
                     num_explicit_hydrogens(atom),
                     explicit_valence(atom),
