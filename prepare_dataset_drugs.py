@@ -7,11 +7,9 @@ import pickle
 import rdkit
 import pandas as pd
 import os
-# os.chdir('/home/nilin/3Dconformer_final/re_code')
 from rdkit.Chem.rdchem import ChiralType
 from rdkit import Chem
 from fea_mole import construct_bigraph_from_mol_int,featurize_atoms
-
 from rdkit.Chem import GetAdjacencyMatrix  # 构建分子邻接矩阵
 from scipy.sparse import coo_matrix  #转换成COO格式
 from tqdm import tqdm
