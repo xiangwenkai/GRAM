@@ -4,6 +4,7 @@ torch-sparse==0.6.18+pt21cu121
 torchaudio==2.1.0
 torchdata==0.7.1
 torchvision==0.16.0
+dgl==2.2.1
 pydantic==2.5.3
 dgllife==0.3.2
 pandas==2.2.2
