@@ -10,6 +10,8 @@ conda create --name GRAM --file requirements.txt
 ```
 Or you can install the packages step by step. The following installation commands have been tested to be OK(2024/5/30):
 ```
+conda create -n GRAM python==3.9
+conda activate GRAM
 conda install pytorch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 pytorch-cuda=12.1 -c pytorch -c nvidia
 conda install -c dglteam/label/th21_cu121 dgl
 conda install pydantic
@@ -17,6 +19,7 @@ pip install rdkit
 pip install torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-2.1.0+cu121.html
 pip install scikit-learn
 pip install dgllife
+pip install MDAnalysis
 ```
 
 
