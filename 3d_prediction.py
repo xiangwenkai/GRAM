@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
     model.eval()
     t0 = time.time()
-    tc = 0
+    rmsds = []
     for batch_id, batch_data in enumerate(test_loader):
         mol, bg, b_G, b_dist, pos, b_angle, b_edge_index, b_idx_i, b_idx_j, b_idx_k = batch_data
         bg = bg.to(device)
@@ -142,37 +142,20 @@ if __name__ == '__main__':
                                 dtype=torch.float).to(device)
         k, G_prediction = model.forward(bg, atom_feats, attn_bias, bond_feats, perturb=None)  # 1024,9,17
 
-        pdb_block = Chem.MolToPDBBlock(mol[0])
-        with open(r'pdb_compare\real{}.pdb'.format(tc), 'w') as f:
-            f.write(pdb_block)
+        mol1 = deepcopy(mol[0])
         conf = mol[0].GetConformer()
         for i in range(mol[0].GetNumAtoms()):
             x, y, z = k[i].detach().cpu().numpy().tolist()
             conf.SetAtomPosition(i, Point3D(x, y, z))
-        # MMFFOptimizeMolecule(mol[0])
-        pdb_block = Chem.MolToPDBBlock(mol[0])
-        with open(r'pdb_compare\pre{}.pdb'.format(tc), 'w') as f:
-            f.write(pdb_block)
-        tc += 1
-
-    rmsds = []
-    for i in range(tc):
-        try:
-            mol1 = mda.Universe(
-                r"pdb_compare\real{}.pdb".format(i))
-            mol2 = mda.Universe(
-                r"pdb_compare\pre{}.pdb".format(i))
-        except:
-            continue
-
+        mol2 = deepcopy(mol[0])
         # init
+        mol1, mol2 = mda.Universe(mol1), mda.Universe(mol2)
         rmsd_analysis = RMSD(mol1, mol2)
-
         # RMSD analysis
         rmsd_analysis.run()
         # print(f"RMSD: {rmsd_analysis.rmsd[0, 2]:.2f}")
         rmsds.append(rmsd_analysis.rmsd[0, 2])
-
+        break
     print("average rmsd: {}".format(np.mean(rmsds)))
 
 
