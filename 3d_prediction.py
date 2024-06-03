@@ -153,9 +153,8 @@ if __name__ == '__main__':
         rmsd_analysis = RMSD(mol1, mol2)
         # RMSD analysis
         rmsd_analysis.run()
-        # print(f"RMSD: {rmsd_analysis.rmsd[0, 2]:.2f}")
+        print(f"RMSD: {rmsd_analysis.rmsd[0, 2]:.2f}")
         rmsds.append(rmsd_analysis.rmsd[0, 2])
-        break
     print("average rmsd: {}".format(np.mean(rmsds)))
 
 
