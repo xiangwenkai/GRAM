@@ -10,7 +10,7 @@ from rdkit.Chem.rdchem import Mol
 MST_MAX_WEIGHT = 100
 MAX_NCAND = 2000
 
-# 1. 读取模块
+# 1. read
 def get_mol(smiles):
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
@@ -19,12 +19,11 @@ def get_mol(smiles):
     return mol
 
 
-# 2. 输出模块
+# 2. output
 def get_smiles(mol):
     return Chem.MolToSmiles(mol, kekuleSmiles=True)
 
 
-# 3. 标准化模块
 def sanitize(mol):
     try:
         smiles = get_smiles(mol)
@@ -38,7 +37,6 @@ def get_smiles(mol, kekuleSmiles=True):
     return Chem.MolToSmiles(mol, kekuleSmiles=kekuleSmiles)
 
 
-# 复制分子
 def copy_atom(atom):
     new_atom = Chem.Atom(atom.GetSymbol())
     new_atom.SetFormalCharge(atom.GetFormalCharge())
@@ -58,8 +56,6 @@ def copy_edit_mol(mol):
         new_mol.AddBond(a1, a2, bt)
     return new_mol
 
-
-# 检验等同性
 def ring_bond_equal(b1, b2, reverse=False):
     b1 = (b1.GetBeginAtom(), b1.GetEndAtom())
     if reverse:
@@ -73,13 +69,13 @@ def atom_equal(a1, a2):
     return a1.GetSymbol() == a2.GetSymbol() and a1.GetFormalCharge() == a2.GetFormalCharge()
 
 
-# 设定Mapping Number
+# Mapping Number
 def set_atommap(mol, num=0):
     for atom in mol.GetAtoms():
         atom.SetAtomMapNum(num)
 
 
-# 抽提分子片段（Fragment）
+# Get Fragment
 def get_clique_mol(mol, atoms):
     if isinstance(mol, str):
         mol = Chem.MolFromSmiles(mol)
@@ -101,7 +97,6 @@ def get_broken(frag: Union[str, Mol]) -> List[Tuple[int, str]]:
     return broken_idx_list
 
 
-# 分子片段拆分
 def tree_decomp(mol):
     n_atoms = mol.GetNumAtoms()
     if n_atoms == 1:
