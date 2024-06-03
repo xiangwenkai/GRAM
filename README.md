@@ -76,5 +76,7 @@ python prepare_moleculenet.py
 python finetune_graphormer_sider.py
 ```
 
+The trained models are avaliable at https://drive.google.com/drive/folders/1S9IzlOthWOiC5E9jxLgZALka7HdgNO90?usp=sharing
+
 
 
