@@ -143,9 +143,8 @@ if __name__ == '__main__':
         t0 = time.time()
         tc = 0
         for batch_id, batch_data in enumerate(train_loader):
-            # if batch_id < 1:
-            #     continue
             mol, bg, b_G, b_dist, pos, b_angle, b_edge_index, b_idx_i, b_idx_j, b_idx_k = batch_data
+            break
             bg = bg.to(device)
             b_G = b_G.to(device)
             b_dist = b_dist.to(device)
