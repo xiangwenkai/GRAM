@@ -10,3 +10,4 @@ dgllife==0.3.2
 pandas==2.2.2
 rdkit==2023.9.5
 scikit-learn==1.5.0
+MDAnalysis==2.7.0
