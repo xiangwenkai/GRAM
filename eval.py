@@ -54,8 +54,8 @@ def get_all_metric(y_true, y_pred):
     return pearson_r2_score(y_true_, y_pred_), rmse_score(y_true_, y_pred_), mae_score(y_true_, y_pred_)
 
 
-val_sdf_paths = "/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/data/processed/p2/val/*"
-test_sdf_paths = "/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/data/processed/p2/test/*"
+val_sdf_paths = "data/geom_drugs/processed/val/*"
+test_sdf_paths = "data/geom_drugs/processed/test/*"
 
 val_sdfs = glob.glob(val_sdf_paths)
 test_sdfs = glob.glob(test_sdf_paths)
@@ -83,11 +83,11 @@ model = Graphormer(
 
 model_type = 'gram'
 if model_type == 'gram':
-    PATH = "/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/model/checkpoints_best.pt"
+    PATH = "models/model_gram/checkpoints_best.pt"
 elif model_type == 'rd':
-    PATH = "/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/model_rd/checkpoints_best.pt"
+    PATH = "models/model_rd/checkpoints_best.pt"
 elif model_type == 'coor':
-    PATH = "/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/model_coordinate/checkpoints_best.pt"
+    PATH = "models/model_coordinate/checkpoints_best.pt"
 model.load_state_dict(torch.load(PATH))
 
 
