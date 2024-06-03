@@ -43,8 +43,8 @@ python prepare_dataset_drugs.py
 
 ### 2.Fastsmcg dataset  
 Source: https://github.com/wangzhehyd/fastsmcg/tree/main  
-All processed files are avaliable at data/fastsmcg/processed  
-(here we use dataset-1)  
+(dataset-1)  
+All processed files are avaliable at "./data/fastsmcg/processed.zip", you need to unzip it first.    
 
 ### 3.Moleculenet dataset  
 Source: https://moleculenet.org/datasets-1  
