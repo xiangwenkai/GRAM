@@ -102,7 +102,7 @@ if __name__ == "__main__":
         if num_nodes > 40:
             continue
 
-        # 3D构象
+        # conformations
         signs = []
         g = construct_bigraph_from_mol_int(mol, featurize_atoms)
         d = AllChem.Get3DDistanceMatrix(mol)
@@ -110,13 +110,14 @@ if __name__ == "__main__":
         sum_all = d.mean()
         sum_r = d.mean(0, keepdims=True)
         sum_c = d.mean(1, keepdims=True)
-        # Gram矩阵
+        
+        # Gram matrix
         G = (sum_all - sum_r - sum_c + d) * (-0.5)
 
         # dist and bond
         pos = torch.tensor(mol.GetConformer().GetPositions(), dtype=torch.float)
 
-        # 2d_pos
+        # 2d position
         smi = Chem.MolToSmiles(mol)
         tem = Chem.MolFromSmiles(smi)
         AllChem.Compute2DCoords(tem)
