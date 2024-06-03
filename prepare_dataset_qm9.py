@@ -8,13 +8,12 @@ import pickle
 import rdkit 
 import pandas as pd
 import os
-# os.chdir('/home/nilin/3Dconformer_final/re_code')
 from rdkit.Chem.rdchem import ChiralType
 from rdkit import Chem
 from fea_mole import construct_bigraph_from_mol_int,featurize_atoms
 
-from rdkit.Chem import GetAdjacencyMatrix  # 构建分子邻接矩阵
-from scipy.sparse import coo_matrix  #转换成COO格式
+from rdkit.Chem import GetAdjacencyMatrix 
+from scipy.sparse import coo_matrix  # COO
 from tqdm import tqdm
 import random
 import dgl
@@ -52,7 +51,7 @@ def xyztodat(pos, edge_index, num_nodes):
 def get_coor(G):
     from scipy import linalg as lg
 
-    eig,arr=lg.eig(G)  # 打印特征值eig、特征向量arr
+    eig,arr=lg.eig(G)
     print("eig is {}".format(np.round(eig,2)))
     print("arr is {}".format(np.round(arr,2)))
 
@@ -84,7 +83,7 @@ if __name__ == "__main__":
         if mol is None or len(mol.GetAtoms()) <= 1:
             pass
         else:
-            # 3D构象
+            # conformation
             signs = []
             g = construct_bigraph_from_mol_int(mol, featurize_atoms)
             d = AllChem.Get3DDistanceMatrix(mol)
@@ -92,20 +91,19 @@ if __name__ == "__main__":
             sum_all=d.mean()
             sum_r=d.mean(0,keepdims=True)
             sum_c=d.mean(1,keepdims=True)
-            # Gram矩阵
+            # Gram
             G=(sum_all-sum_r-sum_c+d)*(-0.5)
             name = mol.GetProp('_Name')
 
             # dist and bond
             pos = torch.tensor(mol.GetConformer().GetPositions(), dtype=torch.float)
 
-            A = GetAdjacencyMatrix(mol)   # 创建邻接矩阵
+            A = GetAdjacencyMatrix(mol)   
             coo_A = coo_matrix(A)
             edge_index = [coo_A.row,coo_A.col]
             num_nodes = mol.GetNumAtoms()
             dist, angle, idx_i, idx_j, idx_k = xyztodat(pos, torch.tensor(edge_index,dtype=torch.long), num_nodes)
 
-            # # 三维坐标，平移到第一个点为0
             # pos_3 = pos - pos[0]
 
             # tasks
