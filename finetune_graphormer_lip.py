@@ -79,9 +79,6 @@ metric_name = ['epoch', 'val_rmse', 'val_mae', 'test_rmse', 'test_mae', 'train_l
 out = open("./out/graphormer_{}_finetune{}.txt".format(name, pretrain_flag), "a+")
 out.write(",".join(metric_name)+"\n")
 
-# log = open("/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/log.txt", "w+")
-log = open("log_{}.txt".format(name), "w+")
-
 train_sdf_paths = "./data/{}/train/*".format(name)
 val_sdf_paths = "./data/{}/val/*".format(name)
 test_sdf_paths = "./data/{}/test/*".format(name)
@@ -184,9 +181,7 @@ if __name__ == '__main__':
 
             train_loss += loss.item()
             if batch_id % 20 == 0:
-                # print(loss)
-                log.write("epoch:{}  iter: {}/{} --- loss: {}\n".format(epoch, batch_id, int(num_samples/bsz), train_loss/(batch_id + 1)))
-                log.flush()
+                print(f"Loss: {loss.item()}")
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
