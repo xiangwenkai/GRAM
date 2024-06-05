@@ -18,6 +18,7 @@ import time
 from rdkit.Geometry import Point3D
 from rdkit import Chem
 import random
+import argparse
 random.seed(42)
 
 
@@ -79,63 +80,77 @@ def get_all_metric(y_true, y_pred):
     return pearson_r2_score(y_true_, y_pred_), rmse_score(y_true_, y_pred_), mae_score(y_true_, y_pred_)
 
 
-metric_name = ['epoch', 'val_r2', 'val_rmse', 'val_mae', 'test_r2', 'test_rmse', 'test_mae', 'loss']
-out = open("./out/graphormer_geom_pretrain.txt", "a+")
-out.write(",".join(metric_name)+"\n")
-
-# log = open("/cluster/home/wenkai/dgl_graphormer_local/geom_drugs/log.txt", "w+")
-log = open("log.txt", "w+")
-
-train_sdf_paths = "./data/geom_drugs/train/*"
-val_sdf_paths = "./data/geom_drugs/val/*"
-test_sdf_paths = "./data/geom_drugs/test/*"
-
-train_sdfs = glob.glob(train_sdf_paths)
-val_sdfs = glob.glob(val_sdf_paths)
-test_sdfs = glob.glob(test_sdf_paths)
-train_set = InteractionDataset(train_sdfs, load=True, n_jobs=10)
-val_set = InteractionDataset(val_sdfs, load=True, n_jobs=10)
-test_set = InteractionDataset(test_sdfs, load=True, n_jobs=10)
-
-num_samples = len(train_sdfs)
-print("train samples: {}\n".format(num_samples))
-
-bsz = 16
-train_loader = DataLoader(dataset=train_set, batch_size=bsz, shuffle=False, num_workers=1, collate_fn=collate_molgraphs)
-val_loader = DataLoader(dataset=val_set, batch_size=bsz, shuffle=False, num_workers=1, collate_fn=collate_molgraphs)
-test_loader = DataLoader(dataset=test_set, batch_size=bsz, shuffle=False, num_workers=1, collate_fn=collate_molgraphs)
-
-mu = 0.0
-sigma = 0.2
-
-loss_fn = nn.MSELoss(reduction='none')
-# loss_fn = nn.L1Loss(reduction='none')
-Blr_loss = nn.SmoothL1Loss()
-Bar_loss = nn.SmoothL1Loss()
-
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-# device = torch.device("cpu")
-
-model = Graphormer(
-    n_layers=6,
-    num_heads=8,
-    hidden_dim=512,
-    sp_num_heads=8,
-    dropout_rate=0.1,
-    intput_dropout_rate=0.1,
-    ffn_dim=512,
-    attention_dropout_rate=0.1
-)
-
-# PATH = "./models/checkpoints_1.pt"
-# model.load_state_dict(torch.load(PATH))
-
-model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001,
-                             weight_decay=0.000000001)
-
-stopper = EarlyStopping(mode='lower', filename='./out/gemo_graphormer_pretrain.pth', patience=80)
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Pre-GTM')
+    parser.add_argument('--path', type=str, default='./data/geom_drugs', help='Dataset path')
+    parser.add_argument('--device', type=str, default='cuda', help='Which gpu to use if any (default: cuda)')
+    parser.add_argument('--batch_size', type=int, default=16, help='Input batch size')
+    parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
+    parser.add_argument('--mu', type=float, default=0.0, help='Mean value of noise')
+    parser.add_argument('--sigma', type=float, default=0.2, help='Std value of noise')
+    parser.add_argument('--n_layers', type=int, default=6, help='Number of layers')
+    parser.add_argument('--hidden_size', type=int, default=16, help='Hidden size of model')
+    parser.add_argument('--n_attention', type=int, default=8, help='Number of attention')
+    parser.add_argument('--dropout_rate', type=float, default=0.1, help='Drop out rate')
+    args = parser.parse_args()
+
+    data_path = args.path
+    device = args.device
+    bsz = args.batch_size
+    mu = args.mu
+    sigma = args.sigma
+
+    metric_name = ['epoch', 'val_r2', 'val_rmse', 'val_mae', 'test_r2', 'test_rmse', 'test_mae', 'loss']
+    out = open("./out/graphormer_geom_pretrain.txt", "a+")
+    out.write(",".join(metric_name) + "\n")
+
+    train_sdf_paths = data_path + '/train/*'
+    val_sdf_paths = data_path + '/val/*'
+    test_sdf_paths = data_path + '/test/*'
+
+    train_sdfs = glob.glob(train_sdf_paths)
+    val_sdfs = glob.glob(val_sdf_paths)
+    test_sdfs = glob.glob(test_sdf_paths)
+
+    num_samples = len(train_sdfs)
+    print("train samples: {}\n".format(num_samples))
+
+    train_set = InteractionDataset(train_sdfs, load=True, n_jobs=10)
+    val_set = InteractionDataset(val_sdfs, load=True, n_jobs=10)
+    test_set = InteractionDataset(test_sdfs, load=True, n_jobs=10)
+
+    train_loader = DataLoader(dataset=train_set, batch_size=bsz, shuffle=False, num_workers=1,
+                              collate_fn=collate_molgraphs)
+    val_loader = DataLoader(dataset=val_set, batch_size=bsz, shuffle=False, num_workers=1, collate_fn=collate_molgraphs)
+    test_loader = DataLoader(dataset=test_set, batch_size=bsz, shuffle=False, num_workers=1,
+                             collate_fn=collate_molgraphs)
+
+    loss_fn = nn.MSELoss(reduction='none')
+    # loss_fn = nn.L1Loss(reduction='none')
+    Blr_loss = nn.SmoothL1Loss()
+    Bar_loss = nn.SmoothL1Loss()
+
+    model = Graphormer(
+        n_layers=args.n_layers,
+        num_heads=args.n_attention,
+        hidden_dim=args.hidden_size,
+        sp_num_heads=args.n_attention,
+        dropout_rate=args.dropout_rate,
+        intput_dropout_rate=args.dropout_rate,
+        ffn_dim=args.hidden_size,
+        attention_dropout_rate=args.dropout_rate
+    )
+
+    # PATH = "./models/checkpoints_1.pt"
+    # model.load_state_dict(torch.load(PATH))
+
+    model.to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr,
+                                 weight_decay=0.000000001)
+
+    stopper = EarlyStopping(mode='lower', filename='./out/gemo_graphormer_pretrain.pth', patience=80)
+
+
     epoch = 0
     while True:
         model.train()
@@ -144,7 +159,6 @@ if __name__ == '__main__':
         tc = 0
         for batch_id, batch_data in enumerate(train_loader):
             mol, bg, b_G, b_dist, pos, b_angle, b_edge_index, b_idx_i, b_idx_j, b_idx_k = batch_data
-            break
             bg = bg.to(device)
             b_G = b_G.to(device)
             b_dist = b_dist.to(device)
@@ -192,10 +206,7 @@ if __name__ == '__main__':
 
             # loss = (loss_fn(G_prediction[b_G != 0].flatten(), b_G[b_G != 0].flatten())).mean()
             if batch_id % 500 == 0:
-                # print(loss)
                 print("epoch:{}  iter: {}/{} --- loss: {}\n".format(epoch, batch_id, int(num_samples/bsz), train_loss_G/(batch_id + 1)))
-                log.write("epoch:{}  iter: {}/{} --- loss: {}\n".format(epoch, batch_id, int(num_samples/bsz), train_loss_G/(batch_id + 1)))
-                log.flush()
             train_loss_G = train_loss_G + loss.item()
             optimizer.zero_grad()
             loss.backward()
