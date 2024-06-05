@@ -3,7 +3,6 @@ from model import Graphormer
 from dgl import backend
 import torch.nn as nn
 import datetime
-# import bcolors
 import os
 import numpy as np
 import glob
