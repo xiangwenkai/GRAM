@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader
 from interaction_dataset_bond_length_angle_qm9 import InteractionDataset
 from utils_interaction_length_angle_torch_qm9 import set_random_seed, collate_molgraphs
 import time
+import argparse
 from torch.nn.utils.rnn import pad_sequence
 
 
@@ -81,49 +82,66 @@ def get_all_metric(y_true, y_pred):
     return pearson_r2_score(y_true_, y_pred_), rmse_score(y_true_, y_pred_), mae_score(y_true_, y_pred_)
 
 
-metric_name = ['epoch', 'val_r2', 'val_rmse', 'val_mae', 'test_r2', 'test_rmse', 'test_mae', 'loss']
-out = open("out/qm9_graphormer_pretrain.txt", "w")
-out.write(",".join(metric_name) + "\n")
-set_random_seed(123)
-all_sdf_paths = "data/qm9/processed/*"
-all_sdfs = glob.glob(all_sdf_paths)
-dataset = InteractionDataset(all_sdfs, load=True, n_jobs=1)
-# 999 888
-train_set, val_set, test_set = RandomSplitter.train_val_test_split(
-    dataset, frac_train=0.8, frac_val=0.1,
-    frac_test=0.1, random_state=999)
-train_loader = DataLoader(dataset=train_set, batch_size=128, shuffle=True, num_workers=1, collate_fn=collate_molgraphs)
-val_loader = DataLoader(dataset=val_set, batch_size=128, shuffle=False, num_workers=1, collate_fn=collate_molgraphs)
-test_loader = DataLoader(dataset=test_set, batch_size=128, shuffle=False, num_workers=1, collate_fn=collate_molgraphs)
-mu = 0.0
-sigma = 0.2
-
-loss_fn = nn.MSELoss(reduction='none')
-# loss_fn = nn.L1Loss(reduction='none')
-
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-# device = torch.device("cpu")
-
-model = Graphormer(
-    n_layers=5,
-    num_heads=8,
-    hidden_dim=512,
-    sp_num_heads=8,
-    dropout_rate=0.1,
-    intput_dropout_rate=0.1,
-    ffn_dim=512,
-    attention_dropout_rate=0.1
-)
-
-PATH = r"models\checkpoints_66_2024010301.pt"
-model.load_state_dict(torch.load(PATH))
-
-model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001,
-                             weight_decay=0.000000001)
-stopper = EarlyStopping(mode='lower', filename='out/qm9_graphormer_pretrain.pth', patience=80)
-
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Pre-GTM')
+    parser.add_argument('--path', type=str, default='./data/qm9', help='Dataset path')
+    parser.add_argument('--device', type=str, default='cuda', help='Which gpu to use if any (default: cuda)')
+    parser.add_argument('--batch_size', type=int, default=128, help='Input batch size')
+    parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
+    parser.add_argument('--mu', type=float, default=0.0, help='Mean value of noise')
+    parser.add_argument('--sigma', type=float, default=0.2, help='Std value of noise')
+    parser.add_argument('--n_layers', type=int, default=5, help='Number of layers')
+    parser.add_argument('--hidden_size', type=int, default=512, help='Hidden size of model')
+    parser.add_argument('--n_attention', type=int, default=8, help='Number of attention')
+    parser.add_argument('--dropout_rate', type=float, default=0.1, help='Drop out rate')
+    args = parser.parse_args()
+
+    set_random_seed(123)
+
+    data_path = args.path
+    device = args.device
+    bsz = args.batch_size
+    mu = args.mu
+    sigma = args.sigma
+
+    metric_name = ['epoch', 'val_r2', 'val_rmse', 'val_mae', 'test_r2', 'test_rmse', 'test_mae', 'loss']
+    out = open("out/qm9_graphormer_pretrain.txt", "w")
+    out.write(",".join(metric_name) + "\n")
+    all_sdf_paths = data_path + "/processed/*"
+    all_sdfs = glob.glob(all_sdf_paths)
+    dataset = InteractionDataset(all_sdfs, load=True, n_jobs=1)
+    # 999 888
+    train_set, val_set, test_set = RandomSplitter.train_val_test_split(
+        dataset, frac_train=0.8, frac_val=0.1,
+        frac_test=0.1, random_state=42)
+    train_loader = DataLoader(dataset=train_set, batch_size=bsz, shuffle=True, num_workers=1,
+                              collate_fn=collate_molgraphs)
+    val_loader = DataLoader(dataset=val_set, batch_size=bsz, shuffle=False, num_workers=1, collate_fn=collate_molgraphs)
+    test_loader = DataLoader(dataset=test_set, batch_size=bsz, shuffle=False, num_workers=1,
+                             collate_fn=collate_molgraphs)
+
+    loss_fn = nn.MSELoss(reduction='none')
+    # loss_fn = nn.L1Loss(reduction='none')
+
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    # device = torch.device("cpu")
+
+    model = Graphormer(
+        n_layers=args.n_layers,
+        num_heads=args.n_attention,
+        hidden_dim=args.hidden_size,
+        sp_num_heads=args.n_attention,
+        dropout_rate=args.dropout_rate,
+        intput_dropout_rate=args.dropout_rate,
+        ffn_dim=args.hidden_size,
+        attention_dropout_rate=args.dropout_rate
+    )
+
+    model.to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr,
+                                 weight_decay=0.000000001)
+    stopper = EarlyStopping(mode='lower', filename='out/qm9_graphormer_pretrain.pth', patience=80)
+
     epoch = 0
     while True:
         model.train()

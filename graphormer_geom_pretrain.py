@@ -88,7 +88,7 @@ if __name__ == '__main__':
     parser.add_argument('--mu', type=float, default=0.0, help='Mean value of noise')
     parser.add_argument('--sigma', type=float, default=0.2, help='Std value of noise')
     parser.add_argument('--n_layers', type=int, default=6, help='Number of layers')
-    parser.add_argument('--hidden_size', type=int, default=16, help='Hidden size of model')
+    parser.add_argument('--hidden_size', type=int, default=512, help='Hidden size of model')
     parser.add_argument('--n_attention', type=int, default=8, help='Number of attention')
     parser.add_argument('--dropout_rate', type=float, default=0.1, help='Drop out rate')
     args = parser.parse_args()
