@@ -93,7 +93,6 @@ if __name__ == '__main__':
     parser.add_argument('--device', type=str, default='cuda', help='Which gpu to use if any (default: cuda)')
     parser.add_argument('--batch_size', type=int, default=16, help='Input batch size')
     args = parser.parse_args()
-    # test_sdf_paths = "./data/fastsmcg/processed/*"
     test_sdf_paths = args.path
     device = args.device
     # device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
