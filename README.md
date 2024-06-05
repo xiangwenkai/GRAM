@@ -62,7 +62,7 @@ You can refer to the steps in "Prepare dataset" to prepare your dataset
 You should change the file path prepared first (example: the fastsmcg dataset path "./data/fastsmcg/processed")  
 Then run:  
 ```shell
-python 3d_prediction.py
+python 3d_prediction.py --path ./data/fastsmcg/processed/* --device cuda --batch_size 16
 ```  
 The RMSD will be printed when it finished.  
 
