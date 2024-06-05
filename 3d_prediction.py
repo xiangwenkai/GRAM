@@ -25,6 +25,7 @@ from MDAnalysis.analysis.rms import RMSD
 import random
 from rdkit.Chem.rdForceFieldHelpers import MMFFOptimizeMolecule
 from copy import deepcopy
+import argparse
 random.seed(11)
 
 
@@ -87,21 +88,27 @@ def get_all_metric(y_true, y_pred):
 
 
 if __name__ == '__main__':
-    test_sdf_paths = "./data/fastsmcg/processed/*"
+    parser = argparse.ArgumentParser(description='Pre-GTM')
+    parser.add_argument('--path', type=str, help='Dataset path')
+    parser.add_argument('--device', type=str, default='cuda', help='Which gpu to use if any (default: cuda)')
+    parser.add_argument('--batch_size', type=int, default=16, help='Input batch size')
+    args = parser.parse_args()
+    # test_sdf_paths = "./data/fastsmcg/processed/*"
+    test_sdf_paths = args.path
+    device = args.device
+    # device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    bsz = args.batch_size
     test_sdfs = glob.glob(test_sdf_paths)
     test_set = InteractionDataset(test_sdfs, load=True, n_jobs=10)
     num_samples = len(test_sdfs)
     print("test samples: {}\n".format(num_samples))
 
-    bsz = 1
     test_loader = DataLoader(dataset=test_set, batch_size=bsz, shuffle=False, num_workers=1,
                              collate_fn=collate_molgraphs)
 
     loss_fn = nn.MSELoss(reduction='none')
     Blr_loss = nn.SmoothL1Loss()
     Bar_loss = nn.SmoothL1Loss()
-
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     model = Graphormer(
         n_layers=6,
@@ -114,9 +121,9 @@ if __name__ == '__main__':
         attention_dropout_rate=0.1
     )
 
-    PATH = "./models/pretraining_checkpoints_best.pt"
+    MODEL_PATH = "./models/pretraining_checkpoints_best.pt"
 
-    model.load_state_dict(torch.load(PATH))
+    model.load_state_dict(torch.load(MODEL_PATH))
     model.to(device)
     # mu = 0.0
     # sigma = 0.2
@@ -142,19 +149,20 @@ if __name__ == '__main__':
                                 dtype=torch.float).to(device)
         k, G_prediction = model.forward(bg, atom_feats, attn_bias, bond_feats, perturb=None)  # 1024,9,17
 
-        mol1 = deepcopy(mol[0])
-        conf = mol[0].GetConformer()
-        for i in range(mol[0].GetNumAtoms()):
-            x, y, z = k[i].detach().cpu().numpy().tolist()
-            conf.SetAtomPosition(i, Point3D(x, y, z))
-        mol2 = deepcopy(mol[0])
-        # init
-        mol1, mol2 = mda.Universe(mol1), mda.Universe(mol2)
-        rmsd_analysis = RMSD(mol1, mol2)
-        # RMSD analysis
-        rmsd_analysis.run()
-        print(f"RMSD: {rmsd_analysis.rmsd[0, 2]:.2f}")
-        rmsds.append(rmsd_analysis.rmsd[0, 2])
+        for t in range(len(mol)):
+            mol1 = deepcopy(mol[t])
+            conf = mol[t].GetConformer()
+            for i in range(mol[t].GetNumAtoms()):
+                x, y, z = k[i].detach().cpu().numpy().tolist()
+                conf.SetAtomPosition(i, Point3D(x, y, z))
+            mol2 = deepcopy(mol[t])
+            # init
+            mol1, mol2 = mda.Universe(mol1), mda.Universe(mol2)
+            rmsd_analysis = RMSD(mol1, mol2)
+            # RMSD analysis
+            rmsd_analysis.run()
+            print(f"RMSD: {rmsd_analysis.rmsd[0, 2]:.2f}")
+            rmsds.append(rmsd_analysis.rmsd[0, 2])
     print("average rmsd: {}".format(np.mean(rmsds)))
 
 
