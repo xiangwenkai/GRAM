@@ -10,8 +10,8 @@ import os
 from rdkit.Chem.rdchem import ChiralType
 from rdkit import Chem
 from fea_mole import construct_bigraph_from_mol_int,featurize_atoms
-from rdkit.Chem import GetAdjacencyMatrix  # 构建分子邻接矩阵
-from scipy.sparse import coo_matrix  #转换成COO格式
+from rdkit.Chem import GetAdjacencyMatrix  
+from scipy.sparse import coo_matrix 
 from tqdm import tqdm
 import random
 import json
@@ -49,7 +49,7 @@ def xyztodat(pos, edge_index, num_nodes):
 def get_coor(G):
     from scipy import linalg as lg
 
-    eig,arr=lg.eig(G)  # 打印特征值eig、特征向量arr
+    eig,arr=lg.eig(G) 
     print("eig is {}".format(np.round(eig,2)))
     print("arr is {}".format(np.round(arr,2)))
 
@@ -123,7 +123,7 @@ if __name__ == "__main__":
         AllChem.Compute2DCoords(tem)
         pos_2d = torch.tensor(tem.GetConformer().GetPositions(), dtype=torch.float)
 
-        A = GetAdjacencyMatrix(mol)  # 创建邻接矩阵
+        A = GetAdjacencyMatrix(mol)  
         coo_A = coo_matrix(A)
         edge_index = [coo_A.row, coo_A.col]
 
