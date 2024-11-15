@@ -20,6 +20,7 @@ pip install torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-2.1.0+c
 pip install scikit-learn
 pip install dgllife
 pip install MDAnalysis
+pip install torch_geometric
 ```
 
 
