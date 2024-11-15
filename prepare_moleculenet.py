@@ -327,13 +327,13 @@ class MoleculeDataset(InMemoryDataset):
         print('Dataset: {}\nData: {}'.format(self.dataset, self.data))
 
     def get(self, idx):
-        data = Data()
-        for key in self.data.keys:
+        DF = Data()
+        for key in self.data.keys():
             item, slices = self.data[key], self.slices[key]
             s = list(repeat(slice(None), item.dim()))
-            s[data.__cat_dim__(key, item)] = slice(slices[idx], slices[idx + 1])
-            data[key] = item[s]
-        return data
+            s[DF.__cat_dim__(key, item)] = slice(slices[idx], slices[idx + 1])
+            DF[key] = item[s]
+        return DF
 
     @property
     def raw_file_names(self):
@@ -1202,7 +1202,7 @@ def random_split(dataset, smiles_list, task_idx=None, null_value=0,
 if __name__ == "__main__":
     # name = 'sider'
     for name in ['sider', 'bbbp', 'tox21', 'toxcast', 'clintox', 'hiv', 'bace', 'lipophilicity', 'esol']:
-        d_path = './data/{}'.format(name)
+        d_path = './data/moleculenet/{}'.format(name)
 
         downstream_dataset = MoleculeDataset(d_path, dataset=name)
         downstream_smiles = pd.read_csv(os.path.join(d_path, 'processed', 'smiles.csv'), header=None)[0].tolist()
@@ -1220,9 +1220,9 @@ if __name__ == "__main__":
         split_map1 = {'train': train, 'val': val, 'test': test}
         split_map2 = {'train': train_smiles, 'val': valid_smiles, 'test': test_smiles}
         for split in ['train', 'val', 'test']:
-            save_dir = "./data/{}/{}".format(name, split)
+            save_dir = "./data/moleculenet/{}/{}".format(name, split)
             os.makedirs(save_dir, exist_ok=True)
-            data = split_map1[split]
+            df = split_map1[split]
             smiles = split_map2[split]
             n = len(smiles)
             print("{} samples: {}".format(split, n))
@@ -1235,7 +1235,7 @@ if __name__ == "__main__":
                     if num_nodes <= 5:
                         continue
                     g = construct_bigraph_from_mol_int(mol, featurize_atoms)
-                    ys = data[i].y
+                    ys = df[i].y
                     if name in ['sider', 'bbbp', 'tox21', 'toxcast', 'clintox', 'hiv', 'bace']:
                         ys[ys != 1] = 0
                     filename = str(i)
